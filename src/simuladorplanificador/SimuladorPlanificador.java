@@ -39,9 +39,10 @@ public class SimuladorPlanificador {
         scheduler.addProcess(p2);
         scheduler.addProcess(p3);
 
-        // 6️⃣ Iniciar el CPU (en un hilo separado)
-        Thread cpuThread = new Thread(cpu);
-        cpuThread.start();
+        // 6️⃣ Iniciar el CPU 
+        cpu.ejecutar();
+        
+        System.out.println("Uso del CPU: " + (cpu.getCpuUtilization() * 100) + "%");
     }
 
     

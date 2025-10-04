@@ -12,11 +12,11 @@ package CPU;
 import Model.PCB;
 import Scheduler.Scheduler; // (interfaz que luego implementará FCFS, RR, etc.)
 
-public class CPU implements Runnable {
-    private final Scheduler scheduler;
-    private boolean running = true;
-    private int cycleDurationMs = 200; // configurable
 
+public class CPU {
+    private final Scheduler scheduler;
+    private int cycleDurationMs = 200; // duración de cada ciclo (simulada)
+    
     // Métricas básicas
     private long totalCycles = 0;
     private long busyCycles = 0;
@@ -25,53 +25,39 @@ public class CPU implements Runnable {
         this.scheduler = scheduler;
     }
 
-    @Override
-    public void run() {
+    // Método principal de ejecución (simulación lineal)
+    public void ejecutar() {
         System.out.println("[CPU] Iniciando simulación...");
 
-        while (running) {
-            PCB process = scheduler.nextProcess(); // el planificador decide
+        while (scheduler.hasReadyProcess()) {
+            PCB proceso = scheduler.nextProcess(); // el planificador decide quién va
+            System.out.println("[CPU] Despachando proceso " + proceso.getPid());
+            proceso.setStatus(PCB.Status.RUNNING);
 
-            if (process != null) {
-                System.out.println("[CPU] Despachando proceso " + process.getPid());
-                process.setStatus(PCB.Status.READY);
-
+            // Mientras queden instrucciones por ejecutar
+            while (proceso.getRemainingInstructions() > 0) {
                 try {
-                    // Dispatcher: ejecuta 1 instrucción
-                    process.getCanRun().release();
-                    process.getDone().acquire();
+                    // Da permiso para ejecutar una instrucción
+                    proceso.getCanRun().release();
+                    // Espera a que el proceso confirme que terminó esa instrucción
+                    proceso.getDone().acquire();
 
-                    busyCycles++;
+                    // Simula avance del reloj
                     totalCycles++;
-
-                    // Verificar si terminó
-                    if (process.getRemainingInstructions() == 0) {
-                        process.setStatus(PCB.Status.TERMINATED);
-                        System.out.println("[CPU] Proceso " + process.getPid() + " finalizado.");
-                    } else {
-                        process.setStatus(PCB.Status.READY);
-                        scheduler.addProcess(process); // vuelve a la cola
-                    }
-
-                    Thread.sleep(cycleDurationMs / 2); // pausa pequeña entre procesos
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
-
-            } else {
-                // No hay procesos listos
-                totalCycles++;
-                try {
+                    busyCycles++;
                     Thread.sleep(cycleDurationMs);
+
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
             }
-        }
-    }
 
-    public void stopCPU() {
-        running = false;
+            // Proceso finaliza
+            proceso.setStatus(PCB.Status.TERMINATED);
+            System.out.println("[CPU] Proceso " + proceso.getPid() + " finalizado.");
+        }
+
+        System.out.println("[CPU] Todos los procesos terminados.");
     }
 
     public double getCpuUtilization() {
@@ -82,4 +68,5 @@ public class CPU implements Runnable {
         this.cycleDurationMs = cycleDurationMs;
     }
 }
+
 
