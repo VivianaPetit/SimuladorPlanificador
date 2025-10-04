@@ -4,9 +4,10 @@
  */
 package simuladorplanificador;
 
-import DataStruct.Queue;
-import DataStruct.LinkedList;
 import Model.PCB;
+import CPU.CPU;
+import Scheduler.Scheduler;   // tu interfaz
+import Scheduler.FCFS;        // o la política que estés probando
 /**
  *
  * @author vivia
@@ -16,22 +17,32 @@ public class SimuladorPlanificador {
     /**
      * @param args the command line arguments
      */
-    public static void main(String[] args) {
-//        Queue queue = new Queue();
-//        for (int i = 0; i < 10; i++) {
-//            queue.enqueue(i);
-//        }
-//        queue.print();
-//        queue.dispatch();
-//        System.out.println(" ----------------");
-//        queue.print();
-//        System.out.println("Hello Wold");
-//        
-//        LinkedList linkedlist = new LinkedList();
-//        queue.print();
-          PCB pcb = new PCB(1, "Proceso1", 50, true, 10, 5, 100, 2, 0);
-          System.out.println(pcb.getName());
-        
+   public static void main(String[] args) {
+        // 1️⃣ Crear un scheduler (ejemplo: FCFS)
+        Scheduler scheduler = new FCFS();
+
+        // 2️⃣ Crear la CPU y pasarle el scheduler
+        CPU cpu = new CPU(scheduler);
+
+        // 3️⃣ Crear algunos procesos (PCB)
+        PCB p1 = new PCB(1, "P1", 5, true, 0, 0, 100, 1, 0);
+        PCB p2 = new PCB(2, "P2", 4, true, 0, 0, 100, 1, 0);
+        PCB p3 = new PCB(3, "P3", 3, true, 0, 0, 100, 1, 0);
+
+        // 4️⃣ Iniciar los hilos de los procesos
+        p1.start();
+        p2.start();
+        p3.start();
+
+        // 5️⃣ Agregarlos al scheduler
+        scheduler.addProcess(p1);
+        scheduler.addProcess(p2);
+        scheduler.addProcess(p3);
+
+        // 6️⃣ Iniciar el CPU (en un hilo separado)
+        Thread cpuThread = new Thread(cpu);
+        cpuThread.start();
     }
+
     
 }
