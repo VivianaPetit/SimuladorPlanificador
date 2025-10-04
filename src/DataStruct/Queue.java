@@ -4,55 +4,79 @@
  */
 package DataStruct;
 
-/**
- *
- * @author vivia
- */
+
 public class Queue {
-    private Nodo first;  
-    private Nodo last;  
-
+    private Nodo head, tail;
+    private int size;
+    
     public Queue() {
-        this.first = null;
-        this.last = null;
+        this.head = this.tail = null;
+        size = 0;
     }
 
-    // Check if the queue is empty
-    public boolean isEmpty() {
-        return first == null;
+    public Nodo getHead() {
+        return head;
     }
 
-    // Enqueue (add an element at the end)
-    public void enqueue(Object info) {
-        Nodo newNode = new Nodo(info);
+    public void setHead(Nodo head) {
+        this.head = head;
+    }
+
+    public Nodo getTail() {
+        return tail;
+    }
+
+    public void setTail(Nodo tail) {
+        this.tail = tail;
+    }
+
+    public int getSize() {
+        return size;
+    }
+
+    public void setSize(int size) {
+        this.size = size;
+    }
+    
+    public void enqueue(Object element) {
+        Nodo nodo = new Nodo(element);
         if (isEmpty()) {
-            first = newNode;
-            last = newNode;
+            setHead(nodo);
+            setTail(nodo);
         } else {
-            last.setNext(newNode);
-            last = newNode;
+            getTail().setNext(nodo);
+            setTail(nodo);
         }
+        size++;
     }
 
-    // Dequeue (remove the first element)
-    public Object dequeue() {
+    public void dequeue() {
         if (isEmpty()) {
-            throw new RuntimeException("Queue is empty");
+            System.out.println("La lista esta vacia");
+        } else {
+            Nodo pointer = getHead();
+            setHead(pointer.getNext());
+            pointer.setNext(null);
+            size--;
         }
-        Object data = first.getInfo();
-        first = first.getNext();
-        if (first == null) { // If the queue became empty
-            last = null;
-        }
-        return data;
+    }
+    
+    public Object dispatch() {
+        Object temp = getHead().getElement();
+        dequeue();
+        return temp;
     }
 
-    // Peek (see the first element without removing it)
-    public Object peek() {
-        if (isEmpty()) {
-            throw new RuntimeException("Queue is empty");
-        }
-        return first.getInfo();
+    public boolean isEmpty() {
+        return getHead() == null && getTail() == null;
     }
+    
+    public void print() {
+        Nodo pointer = getHead();
+        while (pointer != null) {
+            System.out.println("[ "+pointer.getElement() + " ]");
+            pointer = pointer.getNext();
+        }
+    }
+    
 }
-
