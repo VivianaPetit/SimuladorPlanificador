@@ -9,6 +9,7 @@ import CPU.CPU;
 import Scheduler.Scheduler;   // 
 import Scheduler.FCFS;        // 
 import Scheduler.RR;        // 
+import Scheduler.SPN;
 /**
  *
  * @author vivia
@@ -20,7 +21,7 @@ public class SimuladorPlanificador {
      */
    public static void main(String[] args) {
         // 1️⃣ Crear un scheduler (ejemplo: FCFS)
-        Scheduler scheduler = new RR(5);
+        Scheduler scheduler = new SPN();
 
         // 2️⃣ Crear la CPU y pasarle el scheduler
         CPU cpu = new CPU(scheduler);

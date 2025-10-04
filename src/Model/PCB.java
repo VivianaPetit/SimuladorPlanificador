@@ -31,7 +31,7 @@ public class PCB implements Runnable {
     public enum Status {
         NEW, READY, RUNNING, BLOCKED, SUSPENDED, TERMINATED
     }
-
+    
     private int arrivalTime;
     private int startTime;
     private int finishTime;

@@ -18,6 +18,7 @@ public interface Scheduler {
     // Agrega un proceso a la cola de Ready
     void addProcess(PCB p);
     
+    // Indica si hay procesos en la cola de Listo
     boolean hasReadyProcess();
 }
 

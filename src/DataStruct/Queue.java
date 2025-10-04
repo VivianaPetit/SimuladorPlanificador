@@ -84,5 +84,6 @@ public class Queue {
             pointer = pointer.getNext();
         }
     }
+
     
 }
