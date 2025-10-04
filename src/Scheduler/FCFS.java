@@ -13,7 +13,7 @@ import DataStruct.Queue;  //
  */
 public class FCFS implements Scheduler {
 
-    private Queue readyQueue; // Usamos tu cola personalizada
+    private Queue readyQueue; // Usamos cola personalizada
 
     public FCFS() {
         readyQueue = new Queue();

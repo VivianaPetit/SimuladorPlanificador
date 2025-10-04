@@ -6,8 +6,9 @@ package simuladorplanificador;
 
 import Model.PCB;
 import CPU.CPU;
-import Scheduler.Scheduler;   // tu interfaz
-import Scheduler.FCFS;        // o la política que estés probando
+import Scheduler.Scheduler;   // 
+import Scheduler.FCFS;        // 
+import Scheduler.RR;        // 
 /**
  *
  * @author vivia
@@ -19,13 +20,13 @@ public class SimuladorPlanificador {
      */
    public static void main(String[] args) {
         // 1️⃣ Crear un scheduler (ejemplo: FCFS)
-        Scheduler scheduler = new FCFS();
+        Scheduler scheduler = new RR(5);
 
         // 2️⃣ Crear la CPU y pasarle el scheduler
         CPU cpu = new CPU(scheduler);
 
         // 3️⃣ Crear algunos procesos (PCB)
-        PCB p1 = new PCB(1, "P1", 5, true, 0, 0, 100, 1, 0);
+        PCB p1 = new PCB(1, "P1", 10, true, 0, 0, 100, 1, 0);
         PCB p2 = new PCB(2, "P2", 4, true, 0, 0, 100, 1, 0);
         PCB p3 = new PCB(3, "P3", 3, true, 0, 0, 100, 1, 0);
 
@@ -43,6 +44,9 @@ public class SimuladorPlanificador {
         cpu.ejecutar();
         
         System.out.println("Uso del CPU: " + (cpu.getCpuUtilization() * 100) + "%");
+        
+        
+        
     }
 
     

@@ -11,6 +11,7 @@ package CPU;
 
 import Model.PCB;
 import Scheduler.Scheduler; // (interfaz que luego implementará FCFS, RR, etc.)
+import Scheduler.RR;    
 
 
 public class CPU {
@@ -26,39 +27,78 @@ public class CPU {
     }
 
     // Método principal de ejecución (simulación lineal)
+//    public void ejecutar() {
+//        System.out.println("[CPU] Iniciando simulación...");
+//
+//        while (scheduler.hasReadyProcess()) {
+//            PCB proceso = scheduler.nextProcess(); // el planificador decide quién va
+//            System.out.println("[CPU] Despachando proceso " + proceso.getPid());
+//            proceso.setStatus(PCB.Status.RUNNING);
+//
+//            // Mientras queden instrucciones por ejecutar
+//            while (proceso.getRemainingInstructions() > 0) {
+//                try {
+//                    // Da permiso para ejecutar una instrucción
+//                    proceso.getCanRun().release();
+//                    // Espera a que el proceso confirme que terminó esa instrucción
+//                    proceso.getDone().acquire();
+//
+//                    // Simula avance del reloj
+//                    totalCycles++;
+//                    busyCycles++;
+//                    Thread.sleep(cycleDurationMs);
+//
+//                } catch (InterruptedException e) {
+//                    Thread.currentThread().interrupt();
+//                }
+//            }
+//
+//
+//            // Proceso finaliza
+//            proceso.setStatus(PCB.Status.TERMINATED);
+//            System.out.println("[CPU] Proceso " + proceso.getPid() + " finalizado.");
+//        }
+//
+//        System.out.println("[CPU] Todos los procesos terminados.");
+//    }
+    
     public void ejecutar() {
-        System.out.println("[CPU] Iniciando simulación...");
+    System.out.println("[CPU] Iniciando simulación...");
 
-        while (scheduler.hasReadyProcess()) {
-            PCB proceso = scheduler.nextProcess(); // el planificador decide quién va
-            System.out.println("[CPU] Despachando proceso " + proceso.getPid());
-            proceso.setStatus(PCB.Status.RUNNING);
+    while (scheduler.hasReadyProcess()) {
+        PCB proceso = scheduler.nextProcess();
+        System.out.println("[CPU] Despachando proceso " + proceso.getPid());
+        proceso.setStatus(PCB.Status.RUNNING);
 
-            // Mientras queden instrucciones por ejecutar
-            while (proceso.getRemainingInstructions() > 0) {
-                try {
-                    // Da permiso para ejecutar una instrucción
-                    proceso.getCanRun().release();
-                    // Espera a que el proceso confirme que terminó esa instrucción
-                    proceso.getDone().acquire();
+        int quantum = (scheduler instanceof RR) ? ((RR) scheduler).getQuantum() : Integer.MAX_VALUE;
 
-                    // Simula avance del reloj
-                    totalCycles++;
-                    busyCycles++;
-                    Thread.sleep(cycleDurationMs);
+        int instruccionesEjecutadas = 0;
 
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
+        while (proceso.getRemainingInstructions() > 0 && instruccionesEjecutadas < quantum) {
+            try {
+                proceso.getCanRun().release();
+                proceso.getDone().acquire();
+
+                totalCycles++;
+                busyCycles++;
+                instruccionesEjecutadas++;
+                Thread.sleep(cycleDurationMs);
+
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             }
+        }
 
-            // Proceso finaliza
+        if (scheduler instanceof RR) {
+            ((RR) scheduler).requeueIfNeeded(proceso);
+        } else {
             proceso.setStatus(PCB.Status.TERMINATED);
             System.out.println("[CPU] Proceso " + proceso.getPid() + " finalizado.");
         }
-
-        System.out.println("[CPU] Todos los procesos terminados.");
     }
+
+    System.out.println("[CPU] Todos los procesos terminados.");
+}
 
     public double getCpuUtilization() {
         return totalCycles == 0 ? 0 : (double) busyCycles / totalCycles;
