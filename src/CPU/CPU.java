@@ -67,6 +67,12 @@ public class CPU {
 
     while (scheduler.hasReadyProcess()) {
         PCB proceso = scheduler.nextProcess();
+        
+        if (proceso == null) {
+            System.out.println("[CPU] No hay procesos listos para ejecutar.");
+            break;
+        }
+        
         System.out.println("[CPU] Despachando proceso " + proceso.getPid());
         proceso.setStatus(PCB.Status.RUNNING);
 

@@ -62,10 +62,16 @@ public class Queue {
     }
     
     public Object dispatch() {
-        Object temp = getHead().getElement();
-        dequeue();
-        return temp;
+    if (isEmpty()) {
+        return null; // evita NullPointerException
     }
+    Nodo nodo = head;
+    head = head.getNext();
+    if (head == null) {
+        tail = null;
+    }
+    return nodo.getElement();
+}
 
     public boolean isEmpty() {
         return getHead() == null && getTail() == null;
