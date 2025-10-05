@@ -10,6 +10,7 @@ import Scheduler.Scheduler;   //
 import Scheduler.FCFS;        // 
 import Scheduler.RR;        // 
 import Scheduler.SPN;
+import Scheduler.SRT;
 /**
  *
  * @author vivia
@@ -37,12 +38,38 @@ public class SimuladorPlanificador {
         p3.start();
 
         // 5️⃣ Agregarlos al scheduler
-        scheduler.addProcess(p1);
-        scheduler.addProcess(p2);
-        scheduler.addProcess(p3);
+        // 🧵 Ejecutar el CPU en un hilo separado
+        
+        
+        
+        
+    Thread cpuThread = new Thread(() -> {
+    if (scheduler instanceof RR || scheduler instanceof SRT) {
+        cpu.ejecutar(); // Expulsivo
+    } else {
+        cpu.ejecutarSecuencial(); // No expulsivo
+    }
+});
+cpuThread.start();
 
-        // 6️⃣ Iniciar el CPU 
-        cpu.ejecutar();
+
+
+    // 🕒 Simular llegadas en distintos tiempos
+//    try {
+//        scheduler.addProcess(p1); // llega en t=0
+//        Thread.sleep(1);        // espera medio segundo
+//
+//        scheduler.addProcess(p2); // llega en t=0.5s
+//        Thread.sleep(1);        // espera otro medio segundo
+//
+//        scheduler.addProcess(p3); // llega en t=1.0s
+//    } catch (InterruptedException e) {
+//        e.printStackTrace();
+//    }
+scheduler.addProcess(p1);
+scheduler.addProcess(p2);
+scheduler.addProcess(p3);
+    
         
         System.out.println("Uso del CPU: " + (cpu.getCpuUtilization() * 100) + "%");
         
