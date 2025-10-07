@@ -22,7 +22,7 @@ public class SimuladorPlanificador {
      */
    public static void main(String[] args) {
         // 1️⃣ Crear un scheduler (ejemplo: FCFS)
-        Scheduler scheduler = new SPN();
+        Scheduler scheduler = new RR(5);
 
         // 2️⃣ Crear la CPU y pasarle el scheduler
         CPU cpu = new CPU(scheduler);
@@ -41,8 +41,6 @@ public class SimuladorPlanificador {
         // 🧵 Ejecutar el CPU en un hilo separado
         
         
-        
-        
     Thread cpuThread = new Thread(() -> {
     if (scheduler instanceof RR || scheduler instanceof SRT) {
         cpu.ejecutar(); // Expulsivo
@@ -50,7 +48,14 @@ public class SimuladorPlanificador {
         cpu.ejecutarSecuencial(); // No expulsivo
     }
 });
-cpuThread.start();
+    
+    cpu.addProcess(p1);
+    cpu.addProcess(p2);
+    cpu.addProcess(p3);
+    
+    cpuThread.start();
+    
+    
 
 
 
@@ -66,13 +71,8 @@ cpuThread.start();
 //    } catch (InterruptedException e) {
 //        e.printStackTrace();
 //    }
-scheduler.addProcess(p1);
-scheduler.addProcess(p2);
-scheduler.addProcess(p3);
-    
-        
-        System.out.println("Uso del CPU: " + (cpu.getCpuUtilization() * 100) + "%");
-        
+
+  
         
         
     }

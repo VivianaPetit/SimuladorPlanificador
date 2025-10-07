@@ -4,6 +4,7 @@
  */
 package Scheduler;
 
+import DataStruct.Queue;
 import Model.PCB;
 
 /**
@@ -13,12 +14,9 @@ import Model.PCB;
 
 public interface Scheduler {
     // Devuelve el siguiente proceso a ejecutar según la política
-    PCB nextProcess();
+    PCB nextProcess(Queue readyQueue);
 
-    // Agrega un proceso a la cola de Ready
-    void addProcess(PCB p);
-    
     // Indica si hay procesos en la cola de Listo
-    boolean hasReadyProcess();
+    boolean hasReadyProcess(Queue readyQueue);
 }
 

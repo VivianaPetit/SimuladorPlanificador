@@ -5,23 +5,20 @@ import DataStruct.Queue;
 
 public class RR implements Scheduler {
 
-    private Queue readyQueue;
     private final int quantum; // Quantum en número de instrucciones
 
     public RR(int quantum) {
-        this.readyQueue = new Queue();
         this.quantum = quantum;
     }
 
-    @Override
-    public void addProcess(PCB process) {
+    public void addProcess(PCB process, Queue readyQueue) {
         process.setStatus(PCB.Status.READY);
         readyQueue.enqueue(process);
         System.out.println("[Scheduler RR] Proceso " + process.getPid() + " agregado a la cola.");
     }
 
     @Override
-    public PCB nextProcess() {
+    public PCB nextProcess(Queue readyQueue) {
         if (!readyQueue.isEmpty()) {
             return (PCB) readyQueue.dispatch();
         }
@@ -29,7 +26,7 @@ public class RR implements Scheduler {
     }
 
     @Override
-    public boolean hasReadyProcess() {
+    public boolean hasReadyProcess(Queue readyQueue) {
         return !readyQueue.isEmpty();
     }
 
@@ -37,9 +34,9 @@ public class RR implements Scheduler {
         return quantum;
     }
 
-    public void requeueIfNeeded(PCB process) {
+    public void requeueIfNeeded(PCB process, Queue readyQueue) {
         if (process.getRemainingInstructions() > 0) {
-            addProcess(process);
+            addProcess(process, readyQueue);
             System.out.println("[Scheduler RR] Proceso " + process.getPid() +
                     " reencolado con " + process.getRemainingInstructions() + " instrucciones restantes.");
         } else {

@@ -9,6 +9,7 @@ package CPU;
  * @author vivia
  */
 
+import DataStruct.Queue;
 import Model.PCB;
 import Scheduler.Scheduler; // (interfaz que luego implementará FCFS, RR, etc.)
 import Scheduler.RR;   
@@ -22,9 +23,12 @@ public class CPU {
     // Métricas básicas
     private long totalCycles = 0;
     private long busyCycles = 0;
+    
+    private Queue readyQueue;
 
     public CPU(Scheduler scheduler) {
         this.scheduler = scheduler;
+        this.readyQueue = new Queue();
     }
 
     
@@ -32,7 +36,7 @@ public class CPU {
     System.out.println("[CPU] Iniciando simulación...");
 
     while (true) {
-        if (!scheduler.hasReadyProcess()) {
+        if (!scheduler.hasReadyProcess(readyQueue)) {
             try {
                 Thread.sleep(50); // Espera a que lleguen procesos
                 continue;
@@ -41,7 +45,7 @@ public class CPU {
             }
         }
 
-        PCB proceso = scheduler.nextProcess();
+        PCB proceso = scheduler.nextProcess(readyQueue);
         if (proceso == null) continue;
 
         System.out.println("[CPU] Despachando proceso " + proceso.getPid());
@@ -63,7 +67,7 @@ public class CPU {
         }
 
         if (scheduler instanceof RR) {
-            ((RR) scheduler).requeueIfNeeded(proceso);
+            ((RR) scheduler).requeueIfNeeded(proceso, readyQueue);
         } else {
             proceso.setStatus(PCB.Status.TERMINATED);
             System.out.println("[CPU] Proceso " + proceso.getPid() + " finalizado.");
@@ -82,8 +86,8 @@ public class CPU {
     public void ejecutarSecuencial() {
     System.out.println("[CPU] Iniciando simulación (modo no expulsivo)...");
 
-    while (scheduler.hasReadyProcess()) {
-        PCB proceso = scheduler.nextProcess();
+    while (scheduler.hasReadyProcess(readyQueue)) {
+        PCB proceso = scheduler.nextProcess(readyQueue);
         if (proceso == null) continue;
 
         proceso.setStatus(PCB.Status.RUNNING);
@@ -104,10 +108,15 @@ public class CPU {
         proceso.setStatus(PCB.Status.TERMINATED);
         System.out.println("[CPU] Proceso " + proceso.getPid() + " finalizado.");
     }
-
+    
     System.out.println("[CPU] Todos los procesos terminados.");
 }
+    
+    public void addProcess(PCB process) {
+        process.setStatus(PCB.Status.READY);
+        readyQueue.enqueue(process);
+        System.out.println("[CPU Scheduler] Proceso " + process.getPid() + " agregado a la cola de listos.");
+    }
+
 }
-
-
 

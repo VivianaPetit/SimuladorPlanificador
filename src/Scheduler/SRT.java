@@ -17,24 +17,11 @@ import Model.PCB;
  */
 public class SRT implements Scheduler {
 
-    private Queue readyQueue;
-
-    public SRT() {
-        readyQueue = new Queue();
-    }
 
     @Override
-    public void addProcess(PCB process) {
-    process.setStatus(PCB.Status.READY);
-    readyQueue.enqueue(process);
-    sortByRemainingTime(); // 🧠 ordena siempre por tiempo restante
-    System.out.println("[Scheduler SRT] Proceso " + process.getPid() + " agregado a la cola de listos.");
-}
-
-    @Override
-    public PCB nextProcess() {
+    public PCB nextProcess(Queue readyQueue) {
         if (!readyQueue.isEmpty()) {
-            sortByRemainingTime(); // Siempre ordenar antes de despachar
+            sortByRemainingTime(readyQueue); // Siempre ordenar antes de despachar
             PCB next = (PCB) readyQueue.dispatch();
             System.out.println("[Scheduler SRT] Proceso " + next.getPid() +
                                " seleccionado para ejecución (" + next.getRemainingInstructions() + " restantes).");
@@ -43,12 +30,12 @@ public class SRT implements Scheduler {
         return null;
     }
     
-    public PCB peekNextProcess() {
+    public PCB peekNextProcess(Queue readyQueue) {
     return readyQueue.isEmpty() ? null : (PCB) readyQueue.getHead().getElement();
 }
 
     @Override
-    public boolean hasReadyProcess() {
+    public boolean hasReadyProcess(Queue readyQueue) {
         return !readyQueue.isEmpty();
     }
 
@@ -56,7 +43,7 @@ public class SRT implements Scheduler {
      * Ordena la cola según el menor tiempo restante (remainingInstructions).
      * Adaptación del método usado en SPN.
      */
-    private void sortByRemainingTime() {
+    private void sortByRemainingTime(Queue readyQueue) {
         if (readyQueue.isEmpty() || readyQueue.getHead().getNext() == null) {
             return; // Cola vacía o con un solo elemento
         }

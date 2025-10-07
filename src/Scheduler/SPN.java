@@ -14,23 +14,11 @@ import Model.PCB;
  */
 public class SPN implements Scheduler {
 
-    private Queue readyQueue;
-
-    public SPN() {
-        readyQueue = new Queue();
-    }
 
     @Override
-    public void addProcess(PCB process) {
-        process.setStatus(PCB.Status.READY);
-        readyQueue.enqueue(process);
-        System.out.println("[Scheduler SPN] Proceso " + process.getPid() + " agregado a la cola de listos.");
-    }
-
-    @Override
-    public PCB nextProcess() {
+    public PCB nextProcess(Queue readyQueue) {
         if (!readyQueue.isEmpty()) {
-            sortByInstructions(); // Ordenar antes de despachar
+            sortByInstructions(readyQueue); // Ordenar antes de despachar
             PCB next = (PCB) readyQueue.dispatch(); 
             System.out.println("[Scheduler SPN] Proceso " + next.getPid() + " seleccionado para ejecución.");
             return next;
@@ -39,12 +27,12 @@ public class SPN implements Scheduler {
     }
 
     @Override
-    public boolean hasReadyProcess() {
+    public boolean hasReadyProcess(Queue readyQueue) {
         return !readyQueue.isEmpty();
     }
 
     // Método privado para ordenar la cola por menor número de instrucciones
-    private void sortByInstructions() {
+    private void sortByInstructions(Queue readyQueue) {
         if (readyQueue.isEmpty() || readyQueue.getHead().getNext() == null) {
             return; // Cola vacía o con un solo proceso
         }

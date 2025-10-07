@@ -13,21 +13,8 @@ import DataStruct.Queue;  //
  */
 public class FCFS implements Scheduler {
 
-    private Queue readyQueue; // Usamos cola personalizada
-
-    public FCFS() {
-        readyQueue = new Queue();
-    }
-
     @Override
-    public void addProcess(PCB process) {
-        process.setStatus(PCB.Status.READY);
-        readyQueue.enqueue(process);
-        System.out.println("[Scheduler FCFS] Proceso " + process.getPid() + " agregado a la cola de listos.");
-    }
-
-    @Override
-    public PCB nextProcess() {
+    public PCB nextProcess(Queue readyQueue) {
         if (!readyQueue.isEmpty()) {
             PCB next = (PCB) readyQueue.dispatch(); // extrae el primero en la cola
             System.out.println("[Scheduler FCFS] Proceso " + next.getPid() + " seleccionado para ejecución.");
@@ -37,7 +24,7 @@ public class FCFS implements Scheduler {
     }
 
     @Override
-    public boolean hasReadyProcess() {
+    public boolean hasReadyProcess(Queue readyQueue) {
         return !readyQueue.isEmpty();
     }
 }
