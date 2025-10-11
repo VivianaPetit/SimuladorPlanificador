@@ -23,15 +23,15 @@ public class SimuladorPlanificador {
      */
    public static void main(String[] args) {
         // 1️⃣ Crear un scheduler (ejemplo: FCFS)
-        Scheduler scheduler = new SPN();
+        Scheduler scheduler = new FCFS();
 
         // 2️⃣ Crear la CPU y pasarle el scheduler
         CPU cpu = new CPU(scheduler);
 
         // 3️⃣ Crear algunos procesos (PCB)
-        PCB p1 = new PCB(1, "P1", 10, true, 0, 0, 100, 1, 11);
-        PCB p2 = new PCB(2, "P2", 5, true, 0, 0, 100, 1, 12);
-        PCB p3 = new PCB(3, "P3", 3, true, 0, 0, 100, 1, 13);
+        PCB p1 = new PCB(1, "P1", 10, false, 6, 2, 100, 1, 1);
+        PCB p2 = new PCB(2, "P2", 5, true, 0, 0, 100, 1, 20);
+        PCB p3 = new PCB(3, "P3", 6, false, 1, 3, 100, 1, 1);
 
         // 4️⃣ Iniciar los hilos de los procesos
         p1.start();

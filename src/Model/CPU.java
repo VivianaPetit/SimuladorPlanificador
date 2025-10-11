@@ -1,3 +1,4 @@
+
 /*
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
@@ -28,6 +29,8 @@ public class CPU {
     
     private Queue readyQueue;
     private Queue processQueue;
+    Semaphore ioSemaphore = new Semaphore(1); // solo un dispositivo de E/S disponible
+
     
 
     public CPU(Scheduler scheduler) {
@@ -95,6 +98,48 @@ public class CPU {
 
         if (currentProcess == null) continue;
 
+        
+        // ====== Manejo de excepción de E/S ======
+        if (!currentProcess.isCpuBound() &&
+            currentProcess.getCyclesToException() == 0) {
+
+
+            currentProcess.setStatus(PCB.Status.BLOCKED);
+            PCB ioProcess = currentProcess; // guardamos referencia
+
+            // Lanza hilo que simula la atención de E/S
+            new Thread(() -> {
+                ioSemaphore.acquire(); // Bloquea el acceso al dispositivo de E/S
+                try {
+                    System.out.println("[CPU] Proceso " + ioProcess.getPid() + " genera excepción de E/S.");
+                    System.out.println("[I/O Handler] Atendiendo E/S del proceso " + ioProcess.getPid());
+                    Thread.sleep(ioProcess.getExceptionServiceCycles() * cycleDurationMs);
+                    ioProcess.setStatus(PCB.Status.READY);
+                    ioProcess.setCyclesToException(-1); // No generará más excepciones
+                    
+                    System.out.println("[I/O Handler] E/S completada para proceso " + ioProcess.getPid());
+                    synchronized (readyQueue) {
+                        readyQueue.enqueue(ioProcess);
+                    }
+
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                } finally {
+                    ioSemaphore.release(); // Libera el dispositivo
+                }
+            }).start();
+
+            // Libera la CPU inmediatamente
+            currentProcess = null;
+            rrQuantumCounter = 0;
+            continue;
+        }
+        
+        if (currentProcess.getCyclesToException() > 0) {
+            currentProcess.setCyclesToException(currentProcess.getCyclesToException() - 1);
+        }
+
+
         // ====== Ejecutar 1 instrucción ======
         try {
             currentProcess.getCanRun().release();
@@ -140,12 +185,6 @@ public class CPU {
     System.out.println("[CPU] Todos los procesos terminados.");
 }
 
-
-
-
-
-
-
     public double getCpuUtilization() {
         return totalCycles == 0 ? 0 : (double) busyCycles / totalCycles;
     }
@@ -154,7 +193,7 @@ public class CPU {
         this.cycleDurationMs = cycleDurationMs;
     }
     
-    public void ejecutarSecuencial() {
+        public void ejecutarSecuencial() {
     System.out.println("[CPU] Iniciando simulación (modo no expulsivo)...");
 
     while (!readyQueue.isEmpty() || !processQueue.isEmpty()) {
@@ -218,7 +257,7 @@ public class CPU {
 }
 
 
-
+        
     
     public void addProcess(PCB process) {
         process.setStatus(PCB.Status.READY);
@@ -266,4 +305,3 @@ public class CPU {
 }
 
 }
-
