@@ -5,7 +5,7 @@
 package simuladorplanificador;
 
 import Model.PCB;
-import CPU.CPU;
+import Model.CPU;
 import Scheduler.Scheduler;   // 
 import Scheduler.FCFS;        // 
 import Scheduler.RR;        // 
