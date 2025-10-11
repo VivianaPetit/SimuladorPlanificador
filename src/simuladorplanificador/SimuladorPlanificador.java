@@ -11,6 +11,7 @@ import Scheduler.FCFS;        //
 import Scheduler.RR;        // 
 import Scheduler.SPN;
 import Scheduler.SRT;
+import Scheduler.HRRN;
 /**
  *
  * @author vivia
@@ -22,15 +23,15 @@ public class SimuladorPlanificador {
      */
    public static void main(String[] args) {
         // 1️⃣ Crear un scheduler (ejemplo: FCFS)
-        Scheduler scheduler = new RR(5);
+        Scheduler scheduler = new SPN();
 
         // 2️⃣ Crear la CPU y pasarle el scheduler
         CPU cpu = new CPU(scheduler);
 
         // 3️⃣ Crear algunos procesos (PCB)
-        PCB p1 = new PCB(1, "P1", 10, true, 0, 0, 100, 1, 0);
-        PCB p2 = new PCB(2, "P2", 4, true, 0, 0, 100, 1, 0);
-        PCB p3 = new PCB(3, "P3", 3, true, 0, 0, 100, 1, 0);
+        PCB p1 = new PCB(1, "P1", 10, true, 0, 0, 100, 1, 11);
+        PCB p2 = new PCB(2, "P2", 5, true, 0, 0, 100, 1, 12);
+        PCB p3 = new PCB(3, "P3", 3, true, 0, 0, 100, 1, 13);
 
         // 4️⃣ Iniciar los hilos de los procesos
         p1.start();
@@ -49,9 +50,11 @@ public class SimuladorPlanificador {
     }
 });
     
-    cpu.addProcess(p1);
-    cpu.addProcess(p2);
-    cpu.addProcess(p3);
+
+    
+    cpu.addProcessQueue(p1);
+    cpu.addProcessQueue(p2);
+    cpu.addProcessQueue(p3);
     
     cpuThread.start();
     

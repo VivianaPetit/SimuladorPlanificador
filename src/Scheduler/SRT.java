@@ -19,19 +19,43 @@ public class SRT implements Scheduler {
 
 
     @Override
-    public PCB nextProcess(Queue readyQueue) {
-        if (!readyQueue.isEmpty()) {
-            sortByRemainingTime(readyQueue); // Siempre ordenar antes de despachar
-            PCB next = (PCB) readyQueue.dispatch();
-            System.out.println("[Scheduler SRT] Proceso " + next.getPid() +
-                               " seleccionado para ejecución (" + next.getRemainingInstructions() + " restantes).");
-            return next;
+public PCB nextProcess(Queue readyQueue) {
+    if (!readyQueue.isEmpty()) {
+        Nodo current = readyQueue.getHead();
+        PCB minPCB = (PCB) current.getElement();
+
+        // Buscar el proceso con menor tiempo restante
+        while (current != null) {
+            PCB pcb = (PCB) current.getElement();
+            if (pcb.getRemainingInstructions() < minPCB.getRemainingInstructions()) {
+                minPCB = pcb;
+            }
+            current = current.getNext();
         }
-        return null;
+
+        System.out.println("[Scheduler SRT] Proceso " + minPCB.getPid() +
+                           " seleccionado para ejecución (" + minPCB.getRemainingInstructions() + " restantes).");
+        return minPCB; // NO hacer dispatch aquí, solo mirar
     }
-    
-    public PCB peekNextProcess(Queue readyQueue) {
-    return readyQueue.isEmpty() ? null : (PCB) readyQueue.getHead().getElement();
+    return null;
+}
+
+public PCB peekNextProcess(Queue readyQueue) {
+    if (readyQueue.isEmpty()) return null;
+
+    Nodo current = readyQueue.getHead();
+    PCB shortest = null;
+
+    while (current != null) {
+        PCB pcb = (PCB) current.getElement();
+        if (pcb.getRemainingInstructions() > 0) { // ignorar procesos terminados
+            if (shortest == null || pcb.getRemainingInstructions() < shortest.getRemainingInstructions()) {
+                shortest = pcb;
+            }
+        }
+        current = current.getNext();
+    }
+    return shortest;
 }
 
     @Override

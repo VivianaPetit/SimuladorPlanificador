@@ -5,9 +5,12 @@
         <group>
             <file>file:/C:/Users/Jose/Documents/SimuladorPlanificador/src/simuladorplanificador/SimuladorPlanificador.java</file>
             <file>file:/C:/Users/Jose/Documents/SimuladorPlanificador/src/CPU/CPU.java</file>
+            <file>file:/C:/Users/Jose/Documents/SimuladorPlanificador/src/DataStruct/Queue.java</file>
             <file>file:/C:/Users/Jose/Documents/SimuladorPlanificador/src/Scheduler/Scheduler.java</file>
             <file>file:/C:/Users/Jose/Documents/SimuladorPlanificador/src/Model/PCB.java</file>
+            <file>file:/C:/Users/Jose/Documents/SimuladorPlanificador/src/Scheduler/SRT.java</file>
             <file>file:/C:/Users/Jose/Documents/SimuladorPlanificador/src/Scheduler/RR.java</file>
+            <file>file:/C:/Users/Jose/Documents/SimuladorPlanificador/src/Scheduler/SPN.java</file>
             <file>file:/C:/Users/Jose/Documents/SimuladorPlanificador/src/Scheduler/FCFS.java</file>
         </group>
     </open-files>
