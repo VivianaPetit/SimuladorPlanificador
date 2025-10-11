@@ -1,3 +1,4 @@
+
 /*
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Main.java to edit this template
@@ -23,15 +24,15 @@ public class SimuladorPlanificador {
      */
    public static void main(String[] args) {
         // 1️⃣ Crear un scheduler (ejemplo: FCFS)
-        Scheduler scheduler = new FCFS();
+        Scheduler scheduler = new RR(5);
 
         // 2️⃣ Crear la CPU y pasarle el scheduler
         CPU cpu = new CPU(scheduler);
 
         // 3️⃣ Crear algunos procesos (PCB)
-        PCB p1 = new PCB(1, "P1", 10, false, 6, 2, 100, 1, 1);
+        PCB p1 = new PCB(1, "P1", 10, false, 2, 6, 100, 1, 1);
         PCB p2 = new PCB(2, "P2", 5, true, 0, 0, 100, 1, 20);
-        PCB p3 = new PCB(3, "P3", 6, false, 1, 3, 100, 1, 1);
+        PCB p3 = new PCB(3, "P3", 6, true, 0, 0, 100, 1, 1);
 
         // 4️⃣ Iniciar los hilos de los procesos
         p1.start();

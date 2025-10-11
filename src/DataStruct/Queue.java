@@ -84,6 +84,40 @@ public class Queue {
             pointer = pointer.getNext();
         }
     }
+    
+    public boolean remove(Object obj) {
+        if (isEmpty()) {
+            return false;
+        }
+
+        // Caso 1: el primer nodo es el que se elimina
+        if (head.getElement().equals(obj)) {
+            head = head.getNext();
+            if (head == null) {
+                tail = null; // la cola quedó vacía
+            }
+            size--;
+            return true;
+        }
+
+        // Caso 2: buscar en el resto de la cola
+        Nodo current = head;
+        while (current.getNext() != null) {
+            if (current.getNext().getElement().equals(obj)) {
+                // si el nodo eliminado era el último, actualiza tail
+                if (current.getNext() == tail) {
+                    tail = current;
+                }
+                current.setNext(current.getNext().getNext());
+                size--;
+                return true;
+            }
+            current = current.getNext();
+        }
+
+        return false; // no se encontró
+    }
+
 
     
 }

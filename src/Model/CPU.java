@@ -1,4 +1,5 @@
 
+
 /*
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
@@ -29,6 +30,7 @@ public class CPU {
     
     private Queue readyQueue;
     private Queue processQueue;
+    private Queue blockedQueue;
     Semaphore ioSemaphore = new Semaphore(1); // solo un dispositivo de E/S disponible
 
     
@@ -37,6 +39,7 @@ public class CPU {
         this.scheduler = scheduler;
         this.readyQueue = new Queue();
         this.processQueue = new Queue();
+        this.blockedQueue = new Queue();
     }
 
     
@@ -102,18 +105,21 @@ public class CPU {
         // ====== Manejo de excepción de E/S ======
         if (!currentProcess.isCpuBound() &&
             currentProcess.getCyclesToException() == 0) {
-
+            
+            System.out.println("[CPU] Proceso " + currentProcess.getPid() + " genera excepción de E/S.");
 
             currentProcess.setStatus(PCB.Status.BLOCKED);
+            blockedQueue.enqueue(currentProcess);
+            readyQueue.remove(currentProcess);
             PCB ioProcess = currentProcess; // guardamos referencia
 
             // Lanza hilo que simula la atención de E/S
             new Thread(() -> {
                 ioSemaphore.acquire(); // Bloquea el acceso al dispositivo de E/S
+                
                 try {
-                    System.out.println("[CPU] Proceso " + ioProcess.getPid() + " genera excepción de E/S.");
                     System.out.println("[I/O Handler] Atendiendo E/S del proceso " + ioProcess.getPid());
-                    Thread.sleep(ioProcess.getExceptionServiceCycles() * cycleDurationMs);
+                    Thread.sleep(ioProcess.getExceptionServiceCycles() * cycleDurationMs + 600);
                     ioProcess.setStatus(PCB.Status.READY);
                     ioProcess.setCyclesToException(-1); // No generará más excepciones
                     
@@ -236,7 +242,7 @@ public class CPU {
         proceso.setStatus(PCB.Status.RUNNING);
         System.out.println("[CPU] Despachando proceso " + proceso.getPid());
 
-        while (proceso.getRemainingInstructions() > 0) {
+        while (proceso.getRemainingInstructions() > 0 && proceso.getStatus() != PCB.Status.BLOCKED) {
             try {
                 proceso.getCanRun().release();
                 proceso.getDone().acquire();
@@ -248,6 +254,7 @@ public class CPU {
                 Thread.currentThread().interrupt();
             }
         }
+        
 
         proceso.setStatus(PCB.Status.TERMINATED);
         System.out.println("[CPU] Proceso " + proceso.getPid() + " finalizado.");
@@ -255,8 +262,6 @@ public class CPU {
 
     System.out.println("[CPU] Todos los procesos terminados.");
 }
-
-
         
     
     public void addProcess(PCB process) {
@@ -303,5 +308,6 @@ public class CPU {
     public long getCurrentTime() {
     return currentTime;
 }
+    
 
 }

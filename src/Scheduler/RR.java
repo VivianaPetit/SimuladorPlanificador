@@ -20,6 +20,7 @@ public class RR implements Scheduler {
     @Override
     public PCB nextProcess(Queue readyQueue) {
         if (!readyQueue.isEmpty()) {
+            
             return (PCB) readyQueue.dispatch();
         }
         return null;
