@@ -1,5 +1,6 @@
 
 
+
 /*
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
@@ -11,6 +12,8 @@ package Model;
  * @author vivia
  */
 
+import DataStruct.LinkedList;
+import DataStruct.Nodo;
 import DataStruct.Queue;
 import Model.PCB;
 import Scheduler.Scheduler; // (interfaz que luego implementará FCFS, RR, etc.)
@@ -308,6 +311,25 @@ public class CPU {
     public long getCurrentTime() {
     return currentTime;
 }
-    
+        public LinkedList<PCB> obtenerProcesosTotales() {
+            LinkedList<PCB> lista = new LinkedList<>();
+
+            agregarDeCola(lista, readyQueue);
+            agregarDeCola(lista, blockedQueue);
+            agregarDeCola(lista, processQueue);
+
+            return lista;
+        }
+
+        private void agregarDeCola(LinkedList<PCB> lista, Queue cola) {
+            Nodo actual = cola.getHead();
+            while (actual != null) {
+                Object elemento = actual.getElement();
+                if (elemento instanceof PCB pcb) {
+                    lista.insertFinal(pcb);
+                }
+                actual = actual.getNext();
+            }
+        }
 
 }

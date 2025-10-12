@@ -51,8 +51,6 @@ public class SimuladorPlanificador {
     }
 });
     
-
-    
     cpu.addProcessQueue(p1);
     cpu.addProcessQueue(p2);
     cpu.addProcessQueue(p3);
