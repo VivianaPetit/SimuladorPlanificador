@@ -13,6 +13,7 @@ import Scheduler.RR;        //
 import Scheduler.SPN;
 import Scheduler.SRT;
 import Scheduler.HRRN;
+import Scheduler.Feedback;
 /**
  *
  * @author vivia
@@ -24,7 +25,8 @@ public class SimuladorPlanificador {
      */
    public static void main(String[] args) {
         // 1️⃣ Crear un scheduler (ejemplo: FCFS)
-        Scheduler scheduler = new RR(5);
+        int[] quantums = {3, 6, 9}; // niveles de prioridad
+        Scheduler scheduler = new Feedback(quantums);
 
         // 2️⃣ Crear la CPU y pasarle el scheduler
         CPU cpu = new CPU(scheduler);
@@ -46,7 +48,11 @@ public class SimuladorPlanificador {
     Thread cpuThread = new Thread(() -> {
     if (scheduler instanceof RR || scheduler instanceof SRT) {
         cpu.ejecutar(); // Expulsivo
-    } else {
+    }else if (scheduler instanceof Feedback) {
+    cpu.ejecutarFeedback(); // Expulsivo
+}
+    
+    else {
         cpu.ejecutarSecuencial(); // No expulsivo
     }
 });

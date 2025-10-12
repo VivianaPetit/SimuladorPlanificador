@@ -3,7 +3,8 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
 package DataStruct;
-
+import Scheduler.Feedback;
+import Model.PCB;
 
 public class Queue {
     private Nodo head, tail;
@@ -49,6 +50,17 @@ public class Queue {
         }
         size++;
     }
+    
+    public boolean contains(Object obj) {
+    Nodo current = head;
+    while (current != null) {
+        if (current.getElement().equals(obj)) {
+            return true;
+        }
+        current = current.getNext();
+    }
+    return false;
+}
 
     public void dequeue() {
         if (isEmpty()) {
@@ -84,6 +96,21 @@ public class Queue {
             pointer = pointer.getNext();
         }
     }
+    
+    private int findProcessLevel(Feedback fb, PCB p) {
+    for (int i = 0; i < fb.getQueues().getLenght(); i++) {
+        Queue q = fb.getQueues().getElementGeneric(i);
+        Nodo current = q.getHead();
+        while (current != null) {
+            Object elem = current.getElement();
+            if (elem instanceof PCB pcb && pcb == p) {
+                return i; // nivel donde está el proceso
+            }
+            current = current.getNext();
+        }
+    }
+    return 0; // por defecto nivel 0 si no lo encuentra
+}
     
     public boolean remove(Object obj) {
         if (isEmpty()) {

@@ -65,6 +65,20 @@ public class LinkedList<E> {
         }
         return actualNodo.getElement();
     }
+     
+     public E getElementGeneric(int index) {
+    if (index < 0 || index >= length) {
+        throw new IndexOutOfBoundsException(
+            "La posición debe estar entre 0 y " + (length - 1)
+        );
+    }
+
+    Nodo<E> actual = first;
+    for (int i = 0; i < index; i++) {
+        actual = actual.getNext();
+    }
+    return actual.getElement();
+}
 
     /**
      * Devuelve los elementos de una lista en una cadena.
