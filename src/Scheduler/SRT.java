@@ -35,6 +35,7 @@ public PCB nextProcess(Queue readyQueue) {
 
         System.out.println("[Scheduler SRT] Proceso " + minPCB.getPid() +
                            " seleccionado para ejecución (" + minPCB.getRemainingInstructions() + " restantes).");
+        readyQueue.remove(minPCB);
         return minPCB; // NO hacer dispatch aquí, solo mirar
     }
     return null;

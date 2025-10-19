@@ -7,7 +7,11 @@ package GUI;
 import DataStruct.LinkedList;
 import Model.CPU;
 import Model.PCB;
+import Scheduler.FCFS;
+import Scheduler.Feedback;
+import Scheduler.HRRN;
 import Scheduler.RR;
+import Scheduler.SPN;
 import Scheduler.SRT;
 import Scheduler.Scheduler;
 import java.awt.BorderLayout;
@@ -33,8 +37,8 @@ public class SimuladorCPU extends javax.swing.JFrame {
         setSize(700, 500);
         setLayout(new BorderLayout());
 
-        // Configurar el planificador que quieras usar
-        scheduler = new RR(5); // puedes cambiar a SRT o HRRN, etc.
+        // Configurar el planificador a usar
+        scheduler = new RR(5); 
 
         // Crear CPU con el scheduler
         cpu = new CPU(scheduler);
@@ -50,22 +54,24 @@ public class SimuladorCPU extends javax.swing.JFrame {
     private void iniciarSimulacion() {
         // Crear procesos
         LinkedList<PCB> procesos = new LinkedList<>();
-        procesos.insertFinal(new PCB(1, "A", 10, true, 5, 3, 10, 1, 0));
-        procesos.insertFinal(new PCB(2, "B", 20, false, 3, 2, 10, 2, 6));
-        procesos.insertFinal(new PCB(3, "C", 8, true, 7, 2, 10, 3, 8));
+        procesos.insertFinal(new PCB(1, "A", 9, true, 2, 3, 10, 1, 0));
+        procesos.insertFinal(new PCB(2, "B", 5, true, 2, 2, 10, 2, 3));
+        procesos.insertFinal(new PCB(3, "C", 15, true, 2, 3, 10, 1, 0));
+        procesos.insertFinal(new PCB(4, "D", 12, true, 2, 2, 10, 2, 3));
+        procesos.insertFinal(new PCB(5, "E", 3, true, 2, 3, 10, 1, 0));
+        procesos.insertFinal(new PCB(6, "F", 2, true, 2, 2, 10, 2, 3));
+        
 
         // Iniciar hilos
         for (int i = 0; i < procesos.getLenght(); i++) {
             PCB p = procesos.getElementIn(i);
             cpu.addProcessQueue(p);
+            p.start();
         }
 
         // Hilo CPU (simulación)
         Thread cpuThread = new Thread(() -> {
-            if (scheduler instanceof RR || scheduler instanceof SRT)
-                cpu.ejecutar();       // modo expulsivo
-            else
-                cpu.ejecutarSecuencial(); // modo no expulsivo
+            cpu.ejecutar();
         });
         cpuThread.start();
 
@@ -75,7 +81,7 @@ public class SimuladorCPU extends javax.swing.JFrame {
                 LinkedList<PCB> lista = cpu.obtenerProcesosTotales();
                 panelProcesos.actualizarProcesos(lista);
                 try {
-                    Thread.sleep(1);
+                    Thread.sleep(200);
                 } catch (InterruptedException e) {
                     break;
                 }

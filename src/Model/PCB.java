@@ -86,7 +86,7 @@ public class PCB implements Runnable {
                         " | PC=" + pc + " | MAR=" + mar);
 
                 // Simula duración del ciclo (tiempo de CPU)
-                Thread.sleep(600);
+                Thread.sleep(200);
 
                 // Notifica al CPU que terminó esta instrucción
                 done.release();
@@ -107,6 +107,18 @@ public class PCB implements Runnable {
             thread = new Thread(this, "Proceso-" + pid);
             thread.start();
         }
+    }
+    
+    public void incrementPC(){
+        pc++;
+    }
+    
+    public void incrementMAR(){
+        mar++;
+    }
+    
+    public void decrementRemainingInstructions(){
+        remainingInstructions--;
     }
 
 
