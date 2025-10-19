@@ -48,9 +48,16 @@ public class HRRN implements Scheduler {
                     " | R=" + String.format("%.2f", responseRatio));
 
             if (responseRatio > maxRatio) {
-                maxRatio = responseRatio;
-                elegido = p;
-            }
+    // 1. Gana si la relación de respuesta es estrictamente mayor
+    maxRatio = responseRatio;
+    elegido = p;
+} else if (responseRatio == maxRatio) {
+    // 2. Desempate: Gana si la relación es igual Y llegó antes (FCFS)
+    if (elegido == null || p.getArrivalTime() < elegido.getArrivalTime()) {
+        maxRatio = responseRatio;
+        elegido = p;
+    }
+}
         }
 
         // Reencolar todos los procesos que no se eligieron, o que no estaban READY

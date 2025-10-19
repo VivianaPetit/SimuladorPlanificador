@@ -32,9 +32,9 @@ public class SimuladorPlanificador {
         CPU cpu = new CPU(scheduler);
 
         // 3️⃣ Crear algunos procesos (PCB)
-       // PCB p1 = new PCB(1, "P1", 10, false, 2, 6, 100, 1, 1);
-        //PCB p2 = new PCB(2, "P2", 5, true, 0, 0, 100, 1, 20);
-       // PCB p3 = new PCB(3, "P3", 6, true, 0, 0, 100, 1, 1);
+        PCB p1 = new PCB(1, "P1", 10, true, 2, 6, 100, 1, 1);
+        PCB p2 = new PCB(2, "P2", 5, true, 0, 0, 100, 1, 20);
+        PCB p3 = new PCB(3, "P3", 6, true, 0, 0, 100, 1, 1);
 
         // 4️⃣ Iniciar los hilos de los procesos
         //p1.start();
@@ -46,15 +46,9 @@ public class SimuladorPlanificador {
         
         
     Thread cpuThread = new Thread(() -> {
-    if (scheduler instanceof RR || scheduler instanceof SRT) {
-        cpu.ejecutar(); // Expulsivo
-    }else if (scheduler instanceof Feedback) {
-    cpu.ejecutarFeedback(); // Expulsivo
-}
     
-    else {
-        cpu.ejecutarSecuencial(); // No expulsivo
-    }
+        cpu.ejecutar();
+    
 });
     
     cpu.addProcessQueue(p1);

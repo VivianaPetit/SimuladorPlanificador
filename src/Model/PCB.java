@@ -27,6 +27,7 @@ public class PCB implements Runnable {
     private int cyclesToException;
     private int exceptionServiceCycles;
     private int priority;
+    private int currentLevel = 0; // Por defecto 0 (no afecta otros algoritmos) //////////////////////
 
     public enum Status {
         NEW, READY, RUNNING, BLOCKED, SUSPENDED, TERMINATED, SUSPEND_READY, SUSPEND_BLOCKED
@@ -220,5 +221,13 @@ public class PCB implements Runnable {
 
     public Semaphore getDone() {
         return done;
+    }
+    
+    public int getCurrentLevel() { 
+    return currentLevel; 
+}
+
+    public void setCurrentLevel(int level) { 
+        this.currentLevel = level; 
     }
 }

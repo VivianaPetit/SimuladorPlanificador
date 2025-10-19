@@ -67,16 +67,17 @@ public class Feedback implements Scheduler {
      * @return PCB listo o null si no hay procesos
      */
     public PCB getNextProcess() {
-        for (int i = 0; i < levels; i++) {
-            Queue q = queues.getElementGeneric(i);
-            if (q != null && !q.isEmpty()) {
-                PCB p = (PCB) q.dispatch();
-                System.out.println("[Feedback] Proceso " + p.getPid() + " obtenido del nivel " + i);
-                return p;
-            }
+    for (int i = 0; i < levels; i++) {
+        Queue q = queues.getElementGeneric(i);
+        if (q != null && !q.isEmpty()) {
+            PCB p = (PCB) q.dispatch();
+            p.setCurrentLevel(i); // 👈 guardar nivel actual
+            System.out.println("[Feedback] Proceso " + p.getPid() + " obtenido del nivel " + i);
+            return p;
         }
-        return null;
     }
+    return null;
+}
 
     /**
      * Reencola un proceso en el siguiente nivel según su quantum.
@@ -86,7 +87,9 @@ public class Feedback implements Scheduler {
      */
     public void requeueProcess(PCB p, int currentLevel) {
         if (p.getRemainingInstructions() > 0) {
+            
             int nextLevel = Math.min(currentLevel + 1, levels - 1); // degradación
+            p.setCurrentLevel(nextLevel);
             Queue nextQueue = queues.getElementGeneric(nextLevel);
             nextQueue.enqueue(p);
             System.out.println("[Feedback] Reencolando proceso " + p.getPid() +

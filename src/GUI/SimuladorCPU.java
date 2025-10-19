@@ -41,12 +41,18 @@ public class SimuladorCPU extends javax.swing.JFrame {
         setResizable(false);
         setLocationRelativeTo(null);
         setTitle("Simulador de Planificación de Procesos");
+<<<<<<< Updated upstream
         setSize(1055, 700);
         setLayout(new BorderLayout(10,10));
         
+=======
+        setSize(700, 500);
+        setLayout(new BorderLayout());
+        int[] quantums = {3, 6, 9}; // niveles de prioridad
+>>>>>>> Stashed changes
 
         // Configurar el planificador a usar
-        scheduler = new RR(5); 
+        scheduler = new Feedback(quantums); 
 
         // Crear CPU con el scheduler
         cpu = new CPU(scheduler);
@@ -64,6 +70,7 @@ public class SimuladorCPU extends javax.swing.JFrame {
     private void iniciarSimulacion() {
         // Crear procesos
         LinkedList<PCB> procesos = new LinkedList<>();
+        
         procesos.insertFinal(new PCB(1, "A", 9, true, 2, 3, 10, 1, 0));
         procesos.insertFinal(new PCB(2, "B", 5, true, 2, 2, 10, 2, 3));
         procesos.insertFinal(new PCB(3, "C", 10, false, 5, 3, 10, 1, 0));
