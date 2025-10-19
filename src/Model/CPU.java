@@ -38,9 +38,10 @@ public class CPU {
     private Queue readyQueue;
     private Queue processQueue;
     private Queue blockedQueue;
+    private Queue blockedQueueAux;
     private Queue runningQueue;
+    private Queue finishedQueue;
     Semaphore ioSemaphore = new Semaphore(1); // solo un dispositivo de E/S disponible
-
     
 
     public CPU(Scheduler scheduler) {
@@ -48,7 +49,9 @@ public class CPU {
         this.readyQueue = new Queue();
         this.processQueue = new Queue();
         this.blockedQueue = new Queue();
+        this.blockedQueueAux = new Queue();
         this.runningQueue = new Queue();
+        this.finishedQueue = new Queue();
     }
 
     public void ejecutar() {
@@ -131,18 +134,20 @@ public class CPU {
             // no incrementamos busyCycles porque la CPU estuvo idle
             continue;
         }
-
+        
         // 4) Antes de ejecutar la instrucción: comprobar E/S inminente del proceso actual
-        if (!currentProcess.isCpuBound() && currentProcess.getCyclesToException() == currentTime) {
+        if (!currentProcess.isCpuBound() && currentProcess.getCyclesToException() == 0) {
             System.out.println("[Clock " + currentTime + "] Proceso " + currentProcess.getPid() + " genera excepción de E/S -> BLOQUEADO");
             currentProcess.setStatus(PCB.Status.BLOCKED);
             blockedQueue.enqueue(currentProcess);
+            runningQueue.remove(currentProcess);
             currentProcess = null;
             rrQuantumCounter = 0;
             feedbackQuantumCounter = 0;
 
             // lanzar hilo para simular atención I/O
             final PCB ioProc = (PCB) blockedQueue.dispatch(); // ya lo añadimos arriba; lo sacamos para usarlo aquí
+            blockedQueueAux.enqueue(ioProc);
             new Thread(() -> {
                 ioSemaphore.acquire();
                 try {
@@ -161,6 +166,7 @@ public class CPU {
                     } else {
                         synchronized (readyQueue) {
                             readyQueue.enqueue(ioProc);
+                            blockedQueueAux.remove(ioProc);
                         }
                         System.out.println("[Clock " + currentTime + "] [I/O] E/S completada: proceso " + ioProc.getPid() + " -> ready");
                     }
@@ -193,7 +199,11 @@ public class CPU {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
-
+        
+        // actualizar contadores y métricas
+        totalCycles++;
+        busyCycles++;
+        currentTime++;
 
         // Actualizar campos del proceso (CPU hace pc++, mar++, remainingInstructions--)
         // --- Si no tienes estos métodos en PCB, sustituir por los getters/setters adecuados.
@@ -242,24 +252,21 @@ public class CPU {
         // (si en otro hilo se encoló, ese hilo imprimió su propio mensaje ya)
         
         
+        
         // 8) Comprobar si el proceso terminó
         if (currentProcess.getRemainingInstructions() <= 0) {
             currentProcess.setStatus(PCB.Status.TERMINATED);
             runningQueue.remove(currentProcess);
             readyQueue.remove(currentProcess);
             blockedQueue.remove(currentProcess);
+            finishedQueue.enqueue(currentProcess);
             System.out.println("[Clock " + currentTime + "] [CPU] Proceso " + currentProcess.getPid() + " finalizado.");
             currentProcess = null;
             rrQuantumCounter = 0;
             feedbackQuantumCounter = 0;
             continue;
         }
-        
-        // actualizar contadores y métricas
-        totalCycles++;
-        busyCycles++;
-        currentTime++;
-        
+       
 
         // 9) Reglas de preempción/quantum según scheduler
 
@@ -366,23 +373,56 @@ public class CPU {
     public void addProcessQueue(PCB process) {
         process.setStatus(PCB.Status.NEW);
         processQueue.enqueue(process);
-}
+        System.out.println("[CPU Scheduler] Proceso " + process.getPid() + " agregado a la cola de procesos.");
+
+//        // Si la cola está vacía, simplemente encolamos
+//        if (processQueue.isEmpty()) {
+//            processQueue.enqueue(process);
+//            System.out.println("[CPU Scheduler] Proceso " + process.getPid() + " agregado a la cola de procesos.");
+//            return;
+//        }
+//
+//        // Creamos una cola temporal para reconstruir la cola en orden
+//        Queue tempQueue = new Queue();
+//        boolean inserted = false;
+//
+//        while (!processQueue.isEmpty()) {
+//            PCB p = (PCB) processQueue.dispatch();
+//            // Insertamos el nuevo proceso antes de cualquier proceso con arrivalTime mayor
+//            if (!inserted && process.getArrivalTime() < p.getArrivalTime()) {
+//                tempQueue.enqueue(process);
+//                inserted = true;
+//            }
+//            tempQueue.enqueue(p);
+//        }
+//
+//        // Si no se insertó, es el último
+//        if (!inserted) {
+//            tempQueue.enqueue(process);
+//        }
+//
+//        // Reemplazamos la cola original con la ordenada
+//        processQueue = tempQueue;
+//
+//        System.out.println("[CPU Scheduler] Proceso " + process.getPid() + " agregado a la cola de procesos.");
+    }
     
     public long getCurrentTime() {
     return currentTime;
 }
-        public LinkedList<PCB> obtenerProcesosTotales() {
+    public LinkedList<PCB> obtenerProcesosTotales() {
             LinkedList<PCB> lista = new LinkedList<>();
-
-            agregarDeCola(lista, readyQueue);
-            agregarDeCola(lista, runningQueue);
-            agregarDeCola(lista, blockedQueue);
+            
             agregarDeCola(lista, processQueue);
-
+            agregarDeCola(lista, runningQueue);
+            agregarDeCola(lista, readyQueue);
+            agregarDeCola(lista, blockedQueueAux);
+            agregarDeCola(lista, finishedQueue);
+            
             return lista;
-        }
+    }
 
-        private void agregarDeCola(LinkedList<PCB> lista, Queue cola) {
+    private void agregarDeCola(LinkedList<PCB> lista, Queue cola) {
             Nodo actual = cola.getHead();
             while (actual != null) {
                 Object elemento = actual.getElement();
@@ -391,6 +431,6 @@ public class CPU {
                 }
                 actual = actual.getNext();
             }
-        }
+    }
 
 }

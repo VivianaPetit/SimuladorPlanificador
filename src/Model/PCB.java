@@ -29,7 +29,7 @@ public class PCB implements Runnable {
     private int priority;
 
     public enum Status {
-        NEW, READY, RUNNING, BLOCKED, SUSPENDED, TERMINATED
+        NEW, READY, RUNNING, BLOCKED, SUSPENDED, TERMINATED, SUSPEND_READY, SUSPEND_BLOCKED
     }
     
     private int arrivalTime;

@@ -144,6 +144,14 @@ public class Queue {
 
         return false; // no se encontró
     }
+    
+    public Object peek() {
+    if (head == null) {
+        return null;
+    }
+    return head.getElement(); // Devuelve el dato del primer nodo sin eliminarlo
+    }
+
 
 
     
