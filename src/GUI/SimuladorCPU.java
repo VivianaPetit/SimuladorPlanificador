@@ -29,8 +29,12 @@ public class SimuladorCPU extends javax.swing.JFrame {
     private PanelProcesos panelProcesos;
     private CPU cpu;
     private Scheduler scheduler;
+    private LinkedList<PCB> procesos;
+    
+    
 
-    public SimuladorCPU() {
+    public SimuladorCPU(LinkedList<PCB> procesosCargados) {
+        this.procesos = procesosCargados; // guardamos la lista que viene de Carga
         initComponents();
         
         colaListo.setLayout(new BoxLayout(colaListo, BoxLayout.X_AXIS));
@@ -41,18 +45,17 @@ public class SimuladorCPU extends javax.swing.JFrame {
         setResizable(false);
         setLocationRelativeTo(null);
         setTitle("Simulador de Planificación de Procesos");
-<<<<<<< Updated upstream
+
         setSize(1055, 700);
         setLayout(new BorderLayout(10,10));
         
-=======
-        setSize(700, 500);
-        setLayout(new BorderLayout());
+
+        
         int[] quantums = {3, 6, 9}; // niveles de prioridad
->>>>>>> Stashed changes
+
 
         // Configurar el planificador a usar
-        scheduler = new Feedback(quantums); 
+        scheduler = new SRT(); 
 
         // Crear CPU con el scheduler
         cpu = new CPU(scheduler);
@@ -69,14 +72,14 @@ public class SimuladorCPU extends javax.swing.JFrame {
     // Este método arranca toda la simulacion
     private void iniciarSimulacion() {
         // Crear procesos
-        LinkedList<PCB> procesos = new LinkedList<>();
         
-        procesos.insertFinal(new PCB(1, "A", 9, true, 2, 3, 10, 1, 0));
-        procesos.insertFinal(new PCB(2, "B", 5, true, 2, 2, 10, 2, 3));
-        procesos.insertFinal(new PCB(3, "C", 10, false, 5, 3, 10, 1, 0));
-        procesos.insertFinal(new PCB(4, "D", 12, false, 2, 6, 10, 2, 3));
-        procesos.insertFinal(new PCB(5, "E", 3, true, 2, 3, 10, 1, 0));
-        procesos.insertFinal(new PCB(6, "F", 2, true, 2, 2, 10, 2, 3));
+ 
+//        procesos.insertFinal(new PCB(1, "A", 9, true, 2, 3, 10, 1, 0));
+//        procesos.insertFinal(new PCB(2, "B", 5, true, 2, 2, 10, 2, 3));
+//        procesos.insertFinal(new PCB(3, "C", 10, false, 5, 3, 10, 1, 0));
+//        procesos.insertFinal(new PCB(4, "D", 12, false, 2, 6, 10, 2, 3));
+//        procesos.insertFinal(new PCB(5, "E", 3, true, 2, 3, 10, 1, 0));
+//        procesos.insertFinal(new PCB(6, "F", 2, true, 2, 2, 10, 2, 3));
 
         for (int i = 0; i < procesos.getLenght(); i++) {
             PCB p = procesos.getElementIn(i);
@@ -204,6 +207,7 @@ public class SimuladorCPU extends javax.swing.JFrame {
         jScrollPane2 = new javax.swing.JScrollPane();
         colaListo = new javax.swing.JPanel();
         jLabel3 = new javax.swing.JLabel();
+        jLabel2 = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("Simulador de Planificador de Procesos");
@@ -224,11 +228,11 @@ public class SimuladorCPU extends javax.swing.JFrame {
         colaTerminado.setLayout(colaTerminadoLayout);
         colaTerminadoLayout.setHorizontalGroup(
             colaTerminadoLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 658, Short.MAX_VALUE)
+            .addGap(0, 1122, Short.MAX_VALUE)
         );
         colaTerminadoLayout.setVerticalGroup(
             colaTerminadoLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 470, Short.MAX_VALUE)
+            .addGap(0, 966, Short.MAX_VALUE)
         );
 
         jScrollPane3.setViewportView(colaTerminado);
@@ -295,6 +299,9 @@ public class SimuladorCPU extends javax.swing.JFrame {
         jLabel3.setText("CPU");
         panelRound2.add(jLabel3, new org.netbeans.lib.awtextra.AbsoluteConstraints(870, 30, -1, -1));
 
+        jLabel2.setIcon(new javax.swing.ImageIcon(getClass().getResource("/GUI/Diseño sin título (2).png"))); // NOI18N
+        panelRound2.add(jLabel2, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, -1, 700));
+
         getContentPane().add(panelRound2, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 1060, 700));
 
         pack();
@@ -328,11 +335,11 @@ public class SimuladorCPU extends javax.swing.JFrame {
         //</editor-fold>
 
         /* Create and display the form */
-        java.awt.EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                 SwingUtilities.invokeLater(() -> new SimuladorCPU().setVisible(true));
-            }
-        });
+//        java.awt.EventQueue.invokeLater(new Runnable() {
+//            public void run() {
+//                 SwingUtilities.invokeLater(() -> new SimuladorCPU().setVisible(true));
+//            }
+//        });
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
@@ -340,6 +347,7 @@ public class SimuladorCPU extends javax.swing.JFrame {
     private javax.swing.JPanel colaBloqueado;
     private javax.swing.JPanel colaListo;
     private javax.swing.JPanel colaTerminado;
+    private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;

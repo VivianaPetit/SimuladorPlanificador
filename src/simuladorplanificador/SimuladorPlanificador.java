@@ -14,6 +14,7 @@ import Scheduler.SPN;
 import Scheduler.SRT;
 import Scheduler.HRRN;
 import Scheduler.Feedback;
+import GUI.Carga;
 /**
  *
  * @author vivia
@@ -25,6 +26,7 @@ public class SimuladorPlanificador {
      */
    public static void main(String[] args) {
         // 1️⃣ Crear un scheduler (ejemplo: FCFS)
+        new Carga().setVisible(true);
         int[] quantums = {3, 6, 9}; // niveles de prioridad
         Scheduler scheduler = new FCFS();
 
@@ -32,9 +34,9 @@ public class SimuladorPlanificador {
         CPU cpu = new CPU(scheduler);
 
         // 3️⃣ Crear algunos procesos (PCB)
-        PCB p1 = new PCB(1, "P1", 10, true, 2, 6, 100, 1, 1);
-        PCB p2 = new PCB(2, "P2", 5, true, 0, 0, 100, 1, 20);
-        PCB p3 = new PCB(3, "P3", 6, true, 0, 0, 100, 1, 1);
+        //PCB p1 = new PCB(1, "P1", 10, true, 2, 6, 100, 1, 1);
+        //PCB p2 = new PCB(2, "P2", 5, true, 0, 0, 100, 1, 20);
+        //PCB p3 = new PCB(3, "P3", 6, true, 0, 0, 100, 1, 1);
 
         // 4️⃣ Iniciar los hilos de los procesos
         //p1.start();
@@ -51,9 +53,9 @@ public class SimuladorPlanificador {
     
 });
     
-    cpu.addProcessQueue(p1);
-    cpu.addProcessQueue(p2);
-    cpu.addProcessQueue(p3);
+    //cpu.addProcessQueue(p1);
+    //cpu.addProcessQueue(p2);
+    //cpu.addProcessQueue(p3);
     
     cpuThread.start();
     
