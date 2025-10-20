@@ -305,7 +305,7 @@ public class CPU {
         if (fbScheduler != null && currentProcess != null) {
             feedbackQuantumCounter++;
             int currentLevel = currentProcess.getCurrentLevel();
-int quantumActual = fbScheduler.getQuantums()[currentLevel];
+            int quantumActual = fbScheduler.getQuantums()[currentLevel];
             if (feedbackQuantumCounter >= quantumActual) {
                 System.out.println("[Scheduler Feedback] Quantum terminado para proceso " + currentProcess.getPid() +
                                    " en nivel " + currentLevel + ". Reencolando / degradando nivel.");
