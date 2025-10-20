@@ -17,7 +17,7 @@ public class AddNewProcess extends javax.swing.JFrame {
      */
     public AddNewProcess() {
         initComponents();
-        this.setSize(432, 445);
+        this.setSize(432, 460);
         this.setResizable(false);
         this.setLocationRelativeTo(null);
         this.setLayout(new BorderLayout(10,10));
@@ -170,7 +170,7 @@ public class AddNewProcess extends javax.swing.JFrame {
         });
         panelRound1.add(iscpubound, new org.netbeans.lib.awtextra.AbsoluteConstraints(220, 130, 150, 30));
 
-        getContentPane().add(panelRound1, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 5, 420, 440));
+        getContentPane().add(panelRound1, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, -5, 440, 470));
 
         pack();
     }// </editor-fold>//GEN-END:initComponents

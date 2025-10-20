@@ -45,6 +45,11 @@ public class SimuladorCPU extends javax.swing.JFrame {
         setLayout(new BorderLayout(10,10));
         
 
+        this.setSize(1055, 700);
+        setLayout(new BorderLayout());
+        int[] quantums = {3, 6, 9}; // niveles de prioridad
+
+
         // Configurar el planificador a usar
         scheduler = new RR(5); 
 
@@ -64,6 +69,7 @@ public class SimuladorCPU extends javax.swing.JFrame {
     private void iniciarSimulacion() {
         // Crear procesos
         LinkedList<PCB> procesos = new LinkedList<>();
+        
         procesos.insertFinal(new PCB(1, "A", 9, true, 2, 3, 10, 1, 0));
         procesos.insertFinal(new PCB(2, "B", 5, true, 2, 2, 10, 2, 3));
         procesos.insertFinal(new PCB(3, "C", 10, false, 5, 3, 10, 1, 0));
@@ -197,6 +203,10 @@ public class SimuladorCPU extends javax.swing.JFrame {
         jScrollPane2 = new javax.swing.JScrollPane();
         colaListo = new javax.swing.JPanel();
         jLabel3 = new javax.swing.JLabel();
+        jMenuBar1 = new javax.swing.JMenuBar();
+        jMenu1 = new javax.swing.JMenu();
+        jMenuItem1 = new javax.swing.JMenuItem();
+        jMenu2 = new javax.swing.JMenu();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("Simulador de Planificador de Procesos");
@@ -226,7 +236,7 @@ public class SimuladorCPU extends javax.swing.JFrame {
 
         jScrollPane3.setViewportView(colaTerminado);
 
-        panelRound2.add(jScrollPane3, new org.netbeans.lib.awtextra.AbsoluteConstraints(40, 370, 670, 140));
+        panelRound2.add(jScrollPane3, new org.netbeans.lib.awtextra.AbsoluteConstraints(40, 350, 670, 140));
 
         CPU.setBackground(new java.awt.Color(255, 255, 255));
         CPU.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(51, 204, 0), 3));
@@ -242,7 +252,7 @@ public class SimuladorCPU extends javax.swing.JFrame {
             .addGap(0, 214, Short.MAX_VALUE)
         );
 
-        panelRound2.add(CPU, new org.netbeans.lib.awtextra.AbsoluteConstraints(770, 60, 240, 220));
+        panelRound2.add(CPU, new org.netbeans.lib.awtextra.AbsoluteConstraints(770, 50, 240, 220));
 
         jScrollPane1.setBorder(null);
 
@@ -262,7 +272,7 @@ public class SimuladorCPU extends javax.swing.JFrame {
 
         jScrollPane1.setViewportView(colaBloqueado);
 
-        panelRound2.add(jScrollPane1, new org.netbeans.lib.awtextra.AbsoluteConstraints(40, 200, 670, 150));
+        panelRound2.add(jScrollPane1, new org.netbeans.lib.awtextra.AbsoluteConstraints(40, 200, 670, 140));
 
         jScrollPane2.setBorder(null);
 
@@ -286,12 +296,34 @@ public class SimuladorCPU extends javax.swing.JFrame {
 
         jLabel3.setFont(new java.awt.Font("Segoe UI", 1, 24)); // NOI18N
         jLabel3.setText("CPU");
-        panelRound2.add(jLabel3, new org.netbeans.lib.awtextra.AbsoluteConstraints(870, 30, -1, -1));
+        panelRound2.add(jLabel3, new org.netbeans.lib.awtextra.AbsoluteConstraints(870, 10, -1, -1));
 
         getContentPane().add(panelRound2, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 1060, 700));
 
+        jMenu1.setText("Archivo");
+
+        jMenuItem1.setText("Crear Proceso");
+        jMenuItem1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem1ActionPerformed(evt);
+            }
+        });
+        jMenu1.add(jMenuItem1);
+
+        jMenuBar1.add(jMenu1);
+
+        jMenu2.setText("Configuración");
+        jMenuBar1.add(jMenu2);
+
+        setJMenuBar(jMenuBar1);
+
         pack();
     }// </editor-fold>//GEN-END:initComponents
+
+    private void jMenuItem1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem1ActionPerformed
+        AddNewProcess v = new AddNewProcess();
+        v.setVisible(true);
+    }//GEN-LAST:event_jMenuItem1ActionPerformed
 
     /**
      * @param args the command line arguments
@@ -334,6 +366,10 @@ public class SimuladorCPU extends javax.swing.JFrame {
     private javax.swing.JPanel colaListo;
     private javax.swing.JPanel colaTerminado;
     private javax.swing.JLabel jLabel3;
+    private javax.swing.JMenu jMenu1;
+    private javax.swing.JMenu jMenu2;
+    private javax.swing.JMenuBar jMenuBar1;
+    private javax.swing.JMenuItem jMenuItem1;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JScrollPane jScrollPane3;
