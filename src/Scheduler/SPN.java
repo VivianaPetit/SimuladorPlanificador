@@ -15,16 +15,42 @@ import Model.PCB;
 public class SPN implements Scheduler {
 
 
+//    @Override
+//    public PCB nextProcess(Queue readyQueue) {
+//        if (!readyQueue.isEmpty()) {
+//            sortByInstructions(readyQueue); // Ordenar antes de despachar
+//            PCB next = (PCB) readyQueue.dispatch(); 
+//            System.out.println("[Scheduler SPN] Proceso " + next.getPid() + " seleccionado para ejecución.");
+//            return next;
+//        }
+//        return null;
+//    }
+    
     @Override
-    public PCB nextProcess(Queue readyQueue) {
-        if (!readyQueue.isEmpty()) {
-            sortByInstructions(readyQueue); // Ordenar antes de despachar
-            PCB next = (PCB) readyQueue.dispatch(); 
-            System.out.println("[Scheduler SPN] Proceso " + next.getPid() + " seleccionado para ejecución.");
-            return next;
+public PCB nextProcess(Queue readyQueue) {
+    if (readyQueue.isEmpty()) return null;
+
+    PCB shortest = null;
+    Nodo actual = readyQueue.getHead();
+
+    // Buscar el proceso con menor cantidad de instrucciones totales
+    while (actual != null) {
+        PCB p = (PCB) actual.getElement();
+        if (shortest == null || p.getTotalInstructions() < shortest.getTotalInstructions()) {
+            shortest = p;
         }
-        return null;
+        actual = actual.getNext();
     }
+
+    // Eliminar ese proceso de la cola (sin alterar la estructura interna)
+    readyQueue.remove(shortest);
+
+    System.out.println("[Scheduler SPN] Proceso " + shortest.getPid() +
+                       " seleccionado para ejecución (" +
+                       shortest.getTotalInstructions() + " instrucciones totales).");
+
+    return shortest;
+}
 
     @Override
     public boolean hasReadyProcess(Queue readyQueue) {

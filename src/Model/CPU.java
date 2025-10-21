@@ -68,7 +68,7 @@ public class CPU {
     }
 
     // bucle principal: mientras existan procesos en cualquier cola o haya un proceso en ejecución
-    while (!processQueue.isEmpty() || !readyQueue.isEmpty() || !blockedQueue.isEmpty() || currentProcess != null
+    while (!processQueue.isEmpty() || !readyQueue.isEmpty() || !blockedQueue.isEmpty() || !blockedQueueAux.isEmpty() || currentProcess != null
             || (fbScheduler != null && hasAnyReadyProcess(fbScheduler))) {
 
         // 1) Revisar llegada de procesos desde processQueue (cada ciclo)
@@ -76,7 +76,7 @@ public class CPU {
             Queue tempQueue = new Queue();
             while (!processQueue.isEmpty()) {
                 PCB p = (PCB) processQueue.dispatch();
-                if (p.getStatus() == PCB.Status.NEW) {
+                if (p.getArrivalTime() <= currentTime && p.getStatus() == PCB.Status.NEW) {
                     // agregamos al ready o al scheduler Feedback en su nivel 0
                     if (fbScheduler != null) {
                         fbScheduler.addNewProcess(p);
@@ -158,18 +158,45 @@ public class CPU {
                     ioProc.setCyclesToException(-1); // evitar nuevas excepciones si ese es el comportamiento deseado
 
                     // encolar de vuelta (si Feedback, al nivel 0; si no, a readyQueue)
+//                    if (fbScheduler != null) {
+//                        synchronized (fbScheduler) {
+//                            fbScheduler.addNewProcess(ioProc);
+//                        }
+//                        System.out.println("[Clock " + currentTime + "] [I/O] E/S completada: proceso " + ioProc.getPid() + " -> Feedback nivel 0");
+//                    } else {
+//                        synchronized (readyQueue) {
+//                            readyQueue.enqueue(ioProc);
+//                            blockedQueueAux.remove(ioProc);
+//                        }
+//                        System.out.println("[Clock " + currentTime + "] [I/O] E/S completada: proceso " + ioProc.getPid() + " -> ready");
+//                    }
+
+                        // encolar de vuelta (si Feedback, al nivel 0; si no, a readyQueue)
                     if (fbScheduler != null) {
                         synchronized (fbScheduler) {
+                            // 🔹 1. Eliminar el proceso de cualquier cola de Feedback donde aún esté
+                            for (int i = 0; i < fbScheduler.getQueues().getLenght(); i++) {
+                                Queue q = fbScheduler.getQueues().getElementGeneric(i);
+                                if (q != null) q.remove(ioProc);
+                            }
+
+                            // 🔹 2. Eliminarlo de bloqueados auxiliares
+                            blockedQueueAux.remove(ioProc);
+
+                            // 🔹 3. Reinsertar limpio en nivel 0
                             fbScheduler.addNewProcess(ioProc);
                         }
-                        System.out.println("[Clock " + currentTime + "] [I/O] E/S completada: proceso " + ioProc.getPid() + " -> Feedback nivel 0");
+                        System.out.println("[Clock " + currentTime + "] [I/O] E/S completada: proceso " +
+                                           ioProc.getPid() + " -> Feedback nivel 0");
                     } else {
                         synchronized (readyQueue) {
                             readyQueue.enqueue(ioProc);
-                            blockedQueueAux.remove(ioProc);
+                            blockedQueueAux.remove(ioProc); // también eliminar en este caso
                         }
-                        System.out.println("[Clock " + currentTime + "] [I/O] E/S completada: proceso " + ioProc.getPid() + " -> ready");
+                        System.out.println("[Clock " + currentTime + "] [I/O] E/S completada: proceso " +
+                                           ioProc.getPid() + " -> ready");
                     }
+
 
                     // notificar al loop principal que algo nuevo está listo (posible preempción)
                     synchronized (arrivalLock) { arrivalLock.notifyAll(); }
@@ -274,9 +301,23 @@ public class CPU {
         if (scheduler instanceof SRT) {
             PCB shortest = ((SRT) scheduler).peekNextProcess(readyQueue);
             if (shortest != null && shortest.getRemainingInstructions() < currentProcess.getRemainingInstructions()) {
-                System.out.println("[Scheduler SRT] Preempción: proceso " + currentProcess.getPid() + " reencolado por " + shortest.getPid());
-                addProcess(currentProcess); // reencolamos
+//                System.out.println("[Scheduler SRT] Preempción: proceso " + currentProcess.getPid() + " reencolado por " + shortest.getPid());
+//                addProcess(currentProcess); // reencolamos
+//                currentProcess.setStatus(PCB.Status.READY);
+//                currentProcess = null;
+//                rrQuantumCounter = 0;
+//                continue;
+                System.out.println("[Scheduler SRT] Preempción: proceso " + currentProcess.getPid() +
+                                   " reencolado por " + shortest.getPid());
+
+                // Quitar del runningQueue ANTES de reencolar
+                runningQueue.remove(currentProcess);
+
+                // Actualizar estado y reencolar en ready
                 currentProcess.setStatus(PCB.Status.READY);
+                addProcess(currentProcess);
+
+                // Limpiar referencias
                 currentProcess = null;
                 rrQuantumCounter = 0;
                 continue;
@@ -314,6 +355,7 @@ public class CPU {
                 currentProcess = null;
                 feedbackQuantumCounter = 0;
                 continue;
+                
             }
         }
 
@@ -410,17 +452,17 @@ public class CPU {
     public long getCurrentTime() {
     return currentTime;
 }
-    public LinkedList<PCB> obtenerProcesosTotales() {
-            LinkedList<PCB> lista = new LinkedList<>();
-            
-            agregarDeCola(lista, processQueue);
-            agregarDeCola(lista, runningQueue);
-            agregarDeCola(lista, readyQueue);
-            agregarDeCola(lista, blockedQueueAux);
-            agregarDeCola(lista, finishedQueue);
-            
-            return lista;
-    }
+//    public LinkedList<PCB> obtenerProcesosTotales() {
+//            LinkedList<PCB> lista = new LinkedList<>();
+//            
+//            agregarDeCola(lista, processQueue);
+//            agregarDeCola(lista, runningQueue);
+//            agregarDeCola(lista, readyQueue);
+//            agregarDeCola(lista, blockedQueueAux);
+//            agregarDeCola(lista, finishedQueue);
+//            
+//            return lista;
+//    }
 
     private void agregarDeCola(LinkedList<PCB> lista, Queue cola) {
             Nodo actual = cola.getHead();
@@ -432,5 +474,45 @@ public class CPU {
                 actual = actual.getNext();
             }
     }
+    
+   public LinkedList<PCB> obtenerTodosLosProcesos() {
+    LinkedList<PCB> lista = new LinkedList<>();
+
+    // Agregar procesos de las colas normales
+    Queue[] colas = {processQueue, runningQueue, readyQueue, blockedQueueAux, finishedQueue};
+    for (Queue q : colas) {
+        Nodo actual = q.getHead(); // suponiendo Queue tiene getHead()
+        while (actual != null) {
+            Object elem = actual.getElement();
+            if (elem instanceof PCB pcb && !lista.existe(pcb)) {
+                lista.insertFinal(pcb);
+            }
+            actual = actual.getNext();
+        }
+    }
+
+    // Agregar procesos de Feedback si aplica
+    if (scheduler instanceof Feedback fb) {
+        LinkedList<Queue> fbQueues = fb.getQueues();
+        for (int i = 0; i < fbQueues.getLenght(); i++) {
+            Queue q = fbQueues.getElementGeneric(i);
+            if (q == null) continue;
+
+            Nodo actual = q.getHead();
+            while (actual != null) {
+                Object elem = actual.getElement();
+                if (elem instanceof PCB pcb && !lista.existe(pcb)) {
+                    lista.insertFinal(pcb);
+                }
+                actual = actual.getNext();
+            }
+        }
+    }
+
+    return lista;
+}
+
+
+
 
 }

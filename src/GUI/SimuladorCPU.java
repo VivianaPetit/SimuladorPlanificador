@@ -61,7 +61,7 @@ public class SimuladorCPU extends javax.swing.JFrame {
 
         // Configurar el planificador a usar
 
-        scheduler = new RR(5); 
+        scheduler = new HRRN(); 
 
 
         // Crear CPU con el scheduler
@@ -102,7 +102,8 @@ public class SimuladorCPU extends javax.swing.JFrame {
 
         new Thread(() -> {
             while (true) {
-                LinkedList<PCB> listaProcesos = cpu.obtenerProcesosTotales();
+                //LinkedList<PCB> listaProcesos = cpu.obtenerProcesosTotales();
+                LinkedList<PCB> listaProcesos = cpu.obtenerTodosLosProcesos();
                 SwingUtilities.invokeLater(() -> actualizarPaneles(listaProcesos));
 
                 try {

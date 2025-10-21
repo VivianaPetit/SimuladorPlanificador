@@ -85,30 +85,83 @@ public class Feedback implements Scheduler {
      * @param p proceso a reencolar
      * @param currentLevel nivel actual
      */
+//    public void requeueProcess(PCB p, int currentLevel) {
+//        if (p.getRemainingInstructions() > 0) {
+//            
+//            int nextLevel = Math.min(currentLevel + 1, levels - 1); // degradación
+//            p.setCurrentLevel(nextLevel);
+//            Queue nextQueue = queues.getElementGeneric(nextLevel);
+//            nextQueue.enqueue(p);
+//            System.out.println("[Feedback] Reencolando proceso " + p.getPid() +
+//                               " en nivel " + nextLevel +
+//                               " | instrucciones restantes: " + p.getRemainingInstructions());
+//        } else {
+//            p.setStatus(PCB.Status.TERMINATED);
+//            System.out.println("[Feedback] Proceso " + p.getPid() + " terminado.");
+//        }
+//    }
     public void requeueProcess(PCB p, int currentLevel) {
-        if (p.getRemainingInstructions() > 0) {
-            
-            int nextLevel = Math.min(currentLevel + 1, levels - 1); // degradación
-            p.setCurrentLevel(nextLevel);
-            Queue nextQueue = queues.getElementGeneric(nextLevel);
+    if (p.getRemainingInstructions() > 0) {
+
+        // 🔹 Asegurarse de que las colas están bien creadas
+        if (queues == null || queues.getLenght() == 0) {
+            System.err.println("[Feedback] ERROR: Las colas no están inicializadas correctamente.");
+            return;
+        }
+
+        // 🔹 Calcular el nuevo nivel (degradación controlada)
+        int nextLevel = Math.min(currentLevel + 1, levels - 1);
+        p.setCurrentLevel(nextLevel);
+        p.setStatus(PCB.Status.READY);
+
+        Queue nextQueue = queues.getElementGeneric(nextLevel);
+        if (nextQueue == null) {
+            System.err.println("[Feedback] ERROR: Cola del nivel " + nextLevel + " es null.");
+            return;
+        }
+
+        // 🔹 Evitar duplicados solo si ya existe en la cola destino
+        if (!nextQueue.contains(p)) {
             nextQueue.enqueue(p);
             System.out.println("[Feedback] Reencolando proceso " + p.getPid() +
                                " en nivel " + nextLevel +
                                " | instrucciones restantes: " + p.getRemainingInstructions());
         } else {
-            p.setStatus(PCB.Status.TERMINATED);
-            System.out.println("[Feedback] Proceso " + p.getPid() + " terminado.");
+            System.out.println("[Feedback] Proceso " + p.getPid() +
+                               " ya está en la cola del nivel " + nextLevel + ", no se duplica.");
         }
+
+    } else {
+        p.setStatus(PCB.Status.TERMINATED);
+        System.out.println("[Feedback] Proceso " + p.getPid() + " terminado.");
     }
+}
+
+
 
     /**
      * Agrega un proceso nuevo al nivel más alto (nivel 0)
      * @param p proceso a agregar
      */
+//    public void addNewProcess(PCB p) {
+//        p.setStatus(PCB.Status.READY);
+//        Queue q = queues.getElementGeneric(0);
+//        q.enqueue(p);
+//        System.out.println("[Feedback] Proceso " + p.getPid() + " agregado al nivel 0.");
+//    }
+    
     public void addNewProcess(PCB p) {
-        p.setStatus(PCB.Status.READY);
-        Queue q = queues.getElementGeneric(0);
-        q.enqueue(p);
-        System.out.println("[Feedback] Proceso " + p.getPid() + " agregado al nivel 0.");
+    // 🔹 Evitar duplicados en niveles inferiores
+    for (int i = 0; i < levels; i++) {
+        Queue q = queues.getElementGeneric(i);
+        if (q != null) q.remove(p);
     }
+
+    p.setStatus(PCB.Status.READY);
+    p.setCurrentLevel(0);
+    Queue q = queues.getElementGeneric(0);
+    q.enqueue(p);
+
+    System.out.println("[Feedback] Proceso " + p.getPid() + " agregado al nivel 0.");
+}
 }
