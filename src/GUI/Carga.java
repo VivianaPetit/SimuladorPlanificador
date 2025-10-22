@@ -28,6 +28,8 @@ public class Carga extends javax.swing.JFrame {
      */
     public Carga() {
         initComponents();
+        this.setResizable(false);
+        this.setLocationRelativeTo(null);
     }
 
     /**
@@ -48,7 +50,6 @@ public class Carga extends javax.swing.JFrame {
         jLabel1 = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setMaximumSize(new java.awt.Dimension(1060, 700));
         setMinimumSize(new java.awt.Dimension(1060, 700));
 
         jPanel1.setMaximumSize(new java.awt.Dimension(1060, 700));
@@ -176,8 +177,8 @@ public class Carga extends javax.swing.JFrame {
 
         JOptionPane.showMessageDialog(null, "Se cargaron " + listaProcesos.getLenght() + " procesos correctamente.");
         
-        SimuladorCPU sim = new SimuladorCPU(listaProcesos);
-        sim.setVisible(true);
+        //SimuladorCPU sim = new SimuladorCPU(listaProcesos);
+        //sim.setVisible(true);
 
     // Cerrar la ventana de carga si quieres
     this.dispose();

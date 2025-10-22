@@ -15,6 +15,7 @@ package Model;
 import DataStruct.LinkedList;
 import DataStruct.Nodo;
 import DataStruct.Queue;
+import GUI.SimuladorCPU;
 import Scheduler.FCFS;
 import Scheduler.Scheduler; // (interfaz que luego implementará FCFS, RR, etc.)
 import Scheduler.RR;   
@@ -25,16 +26,17 @@ import Scheduler.SPN;
 
 
 public class CPU {
-    private final Scheduler scheduler;
-    private int cycleDurationMs = 1000; // duración de cada ciclo (simulada)
+    private Scheduler scheduler;
+    private int cycleDurationMs = 1000; // duración de cada ciclo (simulada) por default: 500
     private int currentTime = 0;
-    private Feedback fbScheduler; // referencia al scheduler Feedback
-    
+    private Feedback fbScheduler; 
+    private volatile boolean ejecutando = false;
+
     
     // Métricas básicas
     private int totalCycles = 0;
     private int busyCycles = 0;
-    
+
     private Queue readyQueue;
     private Queue processQueue;
     private Queue blockedQueue;
@@ -56,6 +58,7 @@ public class CPU {
 
     public void ejecutar() {
     System.out.println("[CPU] Iniciando simulación...");
+    //ejecutando = true;
     PCB currentProcess = null;
     int rrQuantumCounter = 0;
     int feedbackQuantumCounter = 0;
@@ -69,7 +72,7 @@ public class CPU {
 
     // bucle principal: mientras existan procesos en cualquier cola o haya un proceso en ejecución
     while (!processQueue.isEmpty() || !readyQueue.isEmpty() || !blockedQueue.isEmpty() || !blockedQueueAux.isEmpty() || currentProcess != null
-            || (fbScheduler != null && hasAnyReadyProcess(fbScheduler))) {
+            || (fbScheduler != null && hasAnyReadyProcess(fbScheduler))) { 
 
         // 1) Revisar llegada de procesos desde processQueue (cada ciclo)
         if (!processQueue.isEmpty()) {
@@ -372,12 +375,6 @@ public class CPU {
     } // fin while principal
 
     System.out.println("[CPU] Simulación finalizada. Todos los procesos terminados o en estado bloqueado sin avanzar.");
-    System.out.print("\n Tr \n");
-    System.out.print(getCpuUtilization());
-    System.out.print("\n Ciclos ociosos de la CPU \n");
-    System.out.print(totalCycles - busyCycles);
-    System.out.print("\n Ciclos totales \n");
-    System.out.print(totalCycles);
 }
     
     public double getCpuUtilization() {
@@ -511,8 +508,20 @@ public class CPU {
 
     return lista;
 }
-
-
-
-
+   
+   public Object getScheduler(){
+       return this.scheduler;
+   }
+   
+   public void setScheduler(Scheduler scheduler){
+       this.scheduler = scheduler;
+   }
+   
+   public boolean contieneProceso(PCB proceso){
+        return readyQueue.contains(proceso) || runningQueue.contains(proceso) || blockedQueue.contains(proceso) 
+                || blockedQueueAux.contains(proceso) || finishedQueue.contains(proceso)
+                || processQueue.contains(proceso) || (fbScheduler != null && hasAnyReadyProcess(fbScheduler));
+   }
+   
+  
 }
