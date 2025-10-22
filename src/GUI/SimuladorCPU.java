@@ -31,7 +31,7 @@ import java.util.TimerTask;
 public class SimuladorCPU extends javax.swing.JFrame {
     private CPU cpu;
     private Scheduler scheduler;
-    private LinkedList<PCB> procesos;
+    public static LinkedList<PCB> procesos;
     private Timer timer;
     private int tiempo = 0;
     private boolean corriendo = false;
@@ -131,6 +131,7 @@ public class SimuladorCPU extends javax.swing.JFrame {
                 "Cambio de planificación",
                 JOptionPane.INFORMATION_MESSAGE
             );
+            System.out.println("Planificador cambiado a: " + nombre);
         }
 
         private void iniciarReloj(int intervaloMs) {

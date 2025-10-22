@@ -177,9 +177,7 @@ public class Carga extends javax.swing.JFrame {
 
         JOptionPane.showMessageDialog(null, "Se cargaron " + listaProcesos.getLenght() + " procesos correctamente.");
         
-        //SimuladorCPU sim = new SimuladorCPU(listaProcesos);
-        //sim.setVisible(true);
-
+        SimuladorCPU.procesos = listaProcesos;
     // Cerrar la ventana de carga si quieres
     this.dispose();
 

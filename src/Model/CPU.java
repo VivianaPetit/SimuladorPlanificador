@@ -27,7 +27,7 @@ import Scheduler.SPN;
 
 public class CPU {
     private Scheduler scheduler;
-    private int cycleDurationMs = 1000; // duración de cada ciclo (simulada) por default: 500
+    private int cycleDurationMs = 3000; // duración de cada ciclo (simulada) por default: 500
     private int currentTime = 0;
     private Feedback fbScheduler; 
     private volatile boolean ejecutando = false;
@@ -57,7 +57,6 @@ public class CPU {
     }
 
     public void ejecutar() {
-    System.out.println("[CPU] Iniciando simulación...");
     //ejecutando = true;
     PCB currentProcess = null;
     int rrQuantumCounter = 0;
@@ -73,6 +72,8 @@ public class CPU {
     // bucle principal: mientras existan procesos en cualquier cola o haya un proceso en ejecución
     while (!processQueue.isEmpty() || !readyQueue.isEmpty() || !blockedQueue.isEmpty() || !blockedQueueAux.isEmpty() || currentProcess != null
             || (fbScheduler != null && hasAnyReadyProcess(fbScheduler))) { 
+        
+        System.out.println("[CPU] Iniciando simulación...");
 
         // 1) Revisar llegada de procesos desde processQueue (cada ciclo)
         if (!processQueue.isEmpty()) {
@@ -374,7 +375,7 @@ public class CPU {
 
     } // fin while principal
 
-    System.out.println("[CPU] Simulación finalizada. Todos los procesos terminados o en estado bloqueado sin avanzar.");
+    //System.out.println("[CPU] Simulación finalizada. Todos los procesos terminados o en estado bloqueado sin avanzar.");
 }
     
     public double getCpuUtilization() {
