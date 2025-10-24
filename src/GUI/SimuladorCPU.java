@@ -6,7 +6,7 @@ package GUI;
 
 import DataStruct.LinkedList;
 import Model.CPU;
-import Model.PCB;
+import Model.Process;
 import Scheduler.FCFS;
 import Scheduler.Feedback;
 import Scheduler.HRRN;
@@ -31,7 +31,7 @@ import java.util.TimerTask;
 public class SimuladorCPU extends javax.swing.JFrame {
     private CPU cpu;
     private Scheduler scheduler;
-    public static LinkedList<PCB> procesos;
+    public static LinkedList<Process> procesos;
     private Timer timer;
     private int tiempo = 0;
     private boolean corriendo = false;
@@ -46,6 +46,8 @@ public class SimuladorCPU extends javax.swing.JFrame {
         procesos = new DataStruct.LinkedList<>();
         //this.procesos = procesosCargados; // guardamos la lista que viene de Carga
         initComponents();
+        
+        iniciarReloj(1000);
         
         colaListo.setLayout(new BoxLayout(colaListo, BoxLayout.X_AXIS));
         colaBloqueado.setLayout(new BoxLayout(colaBloqueado, BoxLayout.X_AXIS));
@@ -74,7 +76,6 @@ public class SimuladorCPU extends javax.swing.JFrame {
         setTitle("Simulador de Planificación de Procesos");
         setSize(1055, 700);
         setLayout(new BorderLayout(10,10)); 
-        pause.setVisible(false);
        
         // Configurar el planificador a usar
         scheduler = new FCFS(); 
@@ -87,11 +88,13 @@ public class SimuladorCPU extends javax.swing.JFrame {
         
         CPU.setLayout(new FlowLayout(FlowLayout.CENTER, 50, 50));
         CPU.setBackground(new Color(245, 245, 245));
+        
+        iniciarSimulacion();
 
     }
     
-        public static LinkedList<PCB> generarProcesosAleatorios(int cantidad) {
-            LinkedList<PCB> procesos = new LinkedList<>();
+        public static LinkedList<Process> generarProcesosAleatorios(int cantidad) {
+            LinkedList<Process> procesos = new LinkedList<>();
             Random rand = new Random();
 
             for (int i = 1; i <= cantidad; i++) {
@@ -105,7 +108,7 @@ public class SimuladorCPU extends javax.swing.JFrame {
                 int priority = rand.nextInt(10) + 1;       // entre 1 y 10
                 int arrivalTime = rand.nextInt(16);        // entre 0 y 15
 
-                PCB proceso = new PCB(pid, name, totalInstructions, cpuBound,
+                Process proceso = new Process(pid, name, totalInstructions, cpuBound,
                         cyclesToException, exceptionServiceCycles, memoryNeeded,
                         priority, arrivalTime);
 
@@ -168,7 +171,7 @@ public class SimuladorCPU extends javax.swing.JFrame {
                     if (!procesos.esVacio()) {
                         // Agregar procesos nuevos a la CPU si no están aún
                         for (int i = 0; i < procesos.getLenght(); i++) {
-                            PCB p = procesos.getElementIn(i);
+                            Process p = procesos.getElementIn(i);
                             if (!cpu.contieneProceso(p)) { // debes implementar contieneProceso() o verificar con un flag
                                 cpu.addProcessQueue(p);
                                 p.start();
@@ -192,7 +195,7 @@ public class SimuladorCPU extends javax.swing.JFrame {
             // Hilo de actualización de interfaz
             uiThread = new Thread(() -> {
                 while (simulacionActiva) {
-                    LinkedList<PCB> listaProcesos = cpu.obtenerTodosLosProcesos();
+                    LinkedList<Process> listaProcesos = cpu.obtenerTodosLosProcesos();
                     SwingUtilities.invokeLater(() -> actualizarPaneles(listaProcesos));
 
                     try {
@@ -213,7 +216,7 @@ public class SimuladorCPU extends javax.swing.JFrame {
         }
 
        
-        private JPanel crearTarjetaProceso(PCB p) {
+        private JPanel crearTarjetaProceso(Process p) {
     JPanel tarjeta = new JPanel();
     tarjeta.setLayout(new BoxLayout(tarjeta, BoxLayout.Y_AXIS));
     tarjeta.setBorder(BorderFactory.createCompoundBorder(
@@ -264,7 +267,7 @@ public class SimuladorCPU extends javax.swing.JFrame {
 }
 
     
-    private void actualizarPaneles(LinkedList<PCB> procesos) {
+    private void actualizarPaneles(LinkedList<Process> procesos) {
         // Limpiar paneles
         colaListo.removeAll();
         colaBloqueado.removeAll();
@@ -273,7 +276,7 @@ public class SimuladorCPU extends javax.swing.JFrame {
 
         // Agregar procesos a su panel correspondiente
         for (int i = 0; i < procesos.getLenght(); i++) {
-            PCB p = procesos.getElementIn(i);
+            Process p = procesos.getElementIn(i);
             JPanel tarjeta = crearTarjetaProceso(p);
 
             switch (p.getStatus()) {
@@ -319,8 +322,6 @@ public class SimuladorCPU extends javax.swing.JFrame {
         jLabel5 = new javax.swing.JLabel();
         politica = new javax.swing.JLabel();
         jLabel3 = new javax.swing.JLabel();
-        pause = new javax.swing.JLabel();
-        play = new javax.swing.JLabel();
         jLabel1 = new javax.swing.JLabel();
         jMenuBar1 = new javax.swing.JMenuBar();
         jMenu1 = new javax.swing.JMenu();
@@ -335,6 +336,12 @@ public class SimuladorCPU extends javax.swing.JFrame {
         HRRN = new javax.swing.JRadioButtonMenuItem();
         Feedback = new javax.swing.JRadioButtonMenuItem();
         RR = new javax.swing.JRadioButtonMenuItem();
+        menuMs = new javax.swing.JMenu();
+        jRadioButtonMenuItem1 = new javax.swing.JRadioButtonMenuItem();
+        jRadioButtonMenuItem2 = new javax.swing.JRadioButtonMenuItem();
+        jRadioButtonMenuItem3 = new javax.swing.JRadioButtonMenuItem();
+        jRadioButtonMenuItem4 = new javax.swing.JRadioButtonMenuItem();
+        jRadioButtonMenuItem5 = new javax.swing.JRadioButtonMenuItem();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("Simulador de Planificador de Procesos");
@@ -450,22 +457,6 @@ public class SimuladorCPU extends javax.swing.JFrame {
         jLabel3.setText("CPU");
         panelRound2.add(jLabel3, new org.netbeans.lib.awtextra.AbsoluteConstraints(870, 10, -1, -1));
 
-        pause.setIcon(new javax.swing.ImageIcon(getClass().getResource("/GUI/pause.png"))); // NOI18N
-        pause.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mousePressed(java.awt.event.MouseEvent evt) {
-                pauseMousePressed(evt);
-            }
-        });
-        panelRound2.add(pause, new org.netbeans.lib.awtextra.AbsoluteConstraints(380, 560, 40, -1));
-
-        play.setIcon(new javax.swing.ImageIcon(getClass().getResource("/GUI/play-button.png"))); // NOI18N
-        play.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mousePressed(java.awt.event.MouseEvent evt) {
-                playMousePressed(evt);
-            }
-        });
-        panelRound2.add(play, new org.netbeans.lib.awtextra.AbsoluteConstraints(390, 560, -1, -1));
-
         jLabel1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/GUI/Diseño sin título (2).png"))); // NOI18N
         jLabel1.setText("jLabel1");
         panelRound2.add(jLabel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, -1, -1));
@@ -482,7 +473,7 @@ public class SimuladorCPU extends javax.swing.JFrame {
         });
         jMenu1.add(jMenuItem2);
 
-        jMenuItem1.setText("Crear Proceso");
+        jMenuItem1.setText("Crear proceso");
         jMenuItem1.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jMenuItem1ActionPerformed(evt);
@@ -555,6 +546,30 @@ public class SimuladorCPU extends javax.swing.JFrame {
 
         jMenu2.add(menupoliticas);
 
+        menuMs.setText("Duración de ciclos (ms)");
+
+        jRadioButtonMenuItem1.setSelected(true);
+        jRadioButtonMenuItem1.setText("200");
+        menuMs.add(jRadioButtonMenuItem1);
+
+        jRadioButtonMenuItem2.setSelected(true);
+        jRadioButtonMenuItem2.setText("jRadioButtonMenuItem1");
+        menuMs.add(jRadioButtonMenuItem2);
+
+        jRadioButtonMenuItem3.setSelected(true);
+        jRadioButtonMenuItem3.setText("jRadioButtonMenuItem1");
+        menuMs.add(jRadioButtonMenuItem3);
+
+        jRadioButtonMenuItem4.setSelected(true);
+        jRadioButtonMenuItem4.setText("jRadioButtonMenuItem1");
+        menuMs.add(jRadioButtonMenuItem4);
+
+        jRadioButtonMenuItem5.setSelected(true);
+        jRadioButtonMenuItem5.setText("jRadioButtonMenuItem1");
+        menuMs.add(jRadioButtonMenuItem5);
+
+        jMenu2.add(menuMs);
+
         jMenuBar1.add(jMenu2);
 
         setJMenuBar(jMenuBar1);
@@ -577,22 +592,6 @@ public class SimuladorCPU extends javax.swing.JFrame {
         Carga v2 = new Carga();
         v2.setVisible(true);
     }//GEN-LAST:event_jMenuItem3ActionPerformed
-
-    private void pauseMousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_pauseMousePressed
-        // TODO add your handling code here:
-        play.setVisible(true);
-        pause.setVisible(false);
-        detenerReloj();
-        detenerSimulacion();
-    }//GEN-LAST:event_pauseMousePressed
-
-    private void playMousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_playMousePressed
-        // TODO add your handling code here:
-        pause.setVisible(true);
-        play.setVisible(false);
-        iniciarReloj(1000);
-        iniciarSimulacion();
-    }//GEN-LAST:event_playMousePressed
 
     private void FCFSActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_FCFSActionPerformed
         // TODO add your handling code here:
@@ -675,14 +674,18 @@ public class SimuladorCPU extends javax.swing.JFrame {
     private javax.swing.JMenuItem jMenuItem2;
     private javax.swing.JMenuItem jMenuItem3;
     private javax.swing.JPanel jPanel1;
+    private javax.swing.JRadioButtonMenuItem jRadioButtonMenuItem1;
+    private javax.swing.JRadioButtonMenuItem jRadioButtonMenuItem2;
+    private javax.swing.JRadioButtonMenuItem jRadioButtonMenuItem3;
+    private javax.swing.JRadioButtonMenuItem jRadioButtonMenuItem4;
+    private javax.swing.JRadioButtonMenuItem jRadioButtonMenuItem5;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JScrollPane jScrollPane3;
     private javax.swing.JLabel lblReloj;
+    private javax.swing.JMenu menuMs;
     private javax.swing.JMenu menupoliticas;
     private GUI.PanelRound panelRound2;
-    private javax.swing.JLabel pause;
-    private javax.swing.JLabel play;
     private javax.swing.JLabel politica;
     // End of variables declaration//GEN-END:variables
 }

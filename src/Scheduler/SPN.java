@@ -6,7 +6,7 @@ package Scheduler;
 
 import DataStruct.Queue;
 import DataStruct.Nodo;
-import Model.PCB;
+import Model.Process;
 
 /**
  *
@@ -16,10 +16,10 @@ public class SPN implements Scheduler {
 
 
 //    @Override
-//    public PCB nextProcess(Queue readyQueue) {
+//    public Process nextProcess(Queue readyQueue) {
 //        if (!readyQueue.isEmpty()) {
 //            sortByInstructions(readyQueue); // Ordenar antes de despachar
-//            PCB next = (PCB) readyQueue.dispatch(); 
+//            Process next = (Process) readyQueue.dispatch(); 
 //            System.out.println("[Scheduler SPN] Proceso " + next.getPid() + " seleccionado para ejecución.");
 //            return next;
 //        }
@@ -27,15 +27,15 @@ public class SPN implements Scheduler {
 //    }
     
     @Override
-public PCB nextProcess(Queue readyQueue) {
+public Process nextProcess(Queue readyQueue) {
     if (readyQueue.isEmpty()) return null;
 
-    PCB shortest = null;
+    Process shortest = null;
     Nodo actual = readyQueue.getHead();
 
     // Buscar el proceso con menor cantidad de instrucciones totales
     while (actual != null) {
-        PCB p = (PCB) actual.getElement();
+        Process p = (Process) actual.getElement();
         if (shortest == null || p.getTotalInstructions() < shortest.getTotalInstructions()) {
             shortest = p;
         }
@@ -71,8 +71,8 @@ public PCB nextProcess(Queue readyQueue) {
             Nodo prevCompare = null;
 
             while (compare != current) {
-                PCB pcbCurrent = (PCB) current.getElement();
-                PCB pcbCompare = (PCB) compare.getElement();
+                Process pcbCurrent = (Process) current.getElement();
+                Process pcbCompare = (Process) compare.getElement();
 
                 if (pcbCurrent.getTotalInstructions() < pcbCompare.getTotalInstructions()) {
                     // Remover current de su posición

@@ -1,15 +1,15 @@
 package GUI;
 
-import Model.PCB;
+import Model.Process;
 import javax.swing.*;
 import java.awt.*;
 import DataStruct.LinkedList;
 
 public class PanelProcesos extends JPanel {
     private Fuentes tipoFuente;
-    private LinkedList<PCB> procesos;
+    private LinkedList<Process> procesos;
 
-    public PanelProcesos(LinkedList<PCB> procesos) {
+    public PanelProcesos(LinkedList<Process> procesos) {
         this.procesos = procesos;
         tipoFuente = new Fuentes();
 
@@ -19,7 +19,7 @@ public class PanelProcesos extends JPanel {
         crearSubpaneles();
     }
 
-    public void actualizarProcesos(LinkedList<PCB> nuevosProcesos) {
+    public void actualizarProcesos(LinkedList<Process> nuevosProcesos) {
         this.procesos = nuevosProcesos;
         removeAll();
         crearSubpaneles();
@@ -73,7 +73,7 @@ public class PanelProcesos extends JPanel {
         // rellenar con procesos
         if (procesos != null && !procesos.esVacio()) {
             for (int i = 0; i < procesos.getLenght(); i++) {
-                PCB p = procesos.getElementIn(i);
+                Process p = procesos.getElementIn(i);
                 JPanel tarjeta = crearTarjetaProceso(p);
 
                 switch (p.getStatus()) {
@@ -155,7 +155,7 @@ public class PanelProcesos extends JPanel {
         return panel;
     }
 
-    private JPanel crearTarjetaProceso(PCB p) {
+    private JPanel crearTarjetaProceso(Process p) {
         JPanel tarjeta = new JPanel();
         tarjeta.setLayout(new BoxLayout(tarjeta, BoxLayout.Y_AXIS));
         tarjeta.setBorder(BorderFactory.createCompoundBorder(

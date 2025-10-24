@@ -6,7 +6,7 @@ package Scheduler;
 
 import DataStruct.Queue;
 import DataStruct.Nodo;
-import Model.PCB;
+import Model.Process;
 
 /**
  * Implementación del planificador SRT (Shortest Remaining Time)
@@ -19,45 +19,45 @@ public class SRT implements Scheduler {
 
 
     @Override
-public PCB nextProcess(Queue readyQueue) {
-    if (!readyQueue.isEmpty()) {
-        Nodo current = readyQueue.getHead();
-        PCB minPCB = (PCB) current.getElement();
+    public Process nextProcess(Queue readyQueue) {
+        if (!readyQueue.isEmpty()) {
+            Nodo current = readyQueue.getHead();
+            Process minPCB = (Process) current.getElement();
 
-        // Buscar el proceso con menor tiempo restante
+            // Buscar el proceso con menor tiempo restante
+            while (current != null) {
+                Process pcb = (Process) current.getElement();
+                if (pcb.getRemainingInstructions() < minPCB.getRemainingInstructions()) {
+                    minPCB = pcb;
+                }
+                current = current.getNext();
+            }
+
+            System.out.println("[Scheduler SRT] Proceso " + minPCB.getPid() +
+                               " seleccionado para ejecución (" + minPCB.getRemainingInstructions() + " restantes).");
+            readyQueue.remove(minPCB);
+            return minPCB; // NO hacer dispatch aquí, solo mirar
+        }
+        return null;
+    }
+
+    public Process peekNextProcess(Queue readyQueue) {
+        if (readyQueue.isEmpty()) return null;
+
+        Nodo current = readyQueue.getHead();
+        Process shortest = null;
+
         while (current != null) {
-            PCB pcb = (PCB) current.getElement();
-            if (pcb.getRemainingInstructions() < minPCB.getRemainingInstructions()) {
-                minPCB = pcb;
+            Process pcb = (Process) current.getElement();
+            if (pcb.getRemainingInstructions() > 0) { // ignorar procesos terminados
+                if (shortest == null || pcb.getRemainingInstructions() < shortest.getRemainingInstructions()) {
+                    shortest = pcb;
+                }
             }
             current = current.getNext();
         }
-
-        System.out.println("[Scheduler SRT] Proceso " + minPCB.getPid() +
-                           " seleccionado para ejecución (" + minPCB.getRemainingInstructions() + " restantes).");
-        readyQueue.remove(minPCB);
-        return minPCB; // NO hacer dispatch aquí, solo mirar
+        return shortest;
     }
-    return null;
-}
-
-public PCB peekNextProcess(Queue readyQueue) {
-    if (readyQueue.isEmpty()) return null;
-
-    Nodo current = readyQueue.getHead();
-    PCB shortest = null;
-
-    while (current != null) {
-        PCB pcb = (PCB) current.getElement();
-        if (pcb.getRemainingInstructions() > 0) { // ignorar procesos terminados
-            if (shortest == null || pcb.getRemainingInstructions() < shortest.getRemainingInstructions()) {
-                shortest = pcb;
-            }
-        }
-        current = current.getNext();
-    }
-    return shortest;
-}
 
     @Override
     public boolean hasReadyProcess(Queue readyQueue) {
@@ -81,8 +81,8 @@ public PCB peekNextProcess(Queue readyQueue) {
             Nodo prevCompare = null;
 
             while (compare != current) {
-                PCB pcbCurrent = (PCB) current.getElement();
-                PCB pcbCompare = (PCB) compare.getElement();
+                Process pcbCurrent = (Process) current.getElement();
+                Process pcbCompare = (Process) compare.getElement();
 
                 if (pcbCurrent.getRemainingInstructions() < pcbCompare.getRemainingInstructions()) {
                     // Quitar 'current' de su posición actual

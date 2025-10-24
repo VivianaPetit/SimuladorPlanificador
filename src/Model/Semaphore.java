@@ -24,7 +24,7 @@ public class Semaphore {
                 Thread.currentThread().interrupt();
             }
         }
-        permits--; // usa un permiso.
+        permits--; // usa un permiso
     }
 
     // Liberar un permiso

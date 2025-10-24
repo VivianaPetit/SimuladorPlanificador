@@ -3,7 +3,23 @@
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
-            <file>file:/C:/Users/Jose/Documents/SimuladorPlanificador/src/GUI/SimuladorCPU.java</file>
+            <file>file:/C:/Users/vivia/OneDrive/Documentos/Sistemas%20Operativos/SimuladorPlanificador/src/GUI/pause.png</file>
+            <file>file:/C:/Users/vivia/OneDrive/Documentos/Sistemas%20Operativos/SimuladorPlanificador/src/GUI/Carga.java</file>
+            <file>file:/C:/Users/vivia/OneDrive/Documentos/Sistemas%20Operativos/SimuladorPlanificador/src/Scheduler/SRT.java</file>
+            <file>file:/C:/Users/vivia/OneDrive/Documentos/Sistemas%20Operativos/SimuladorPlanificador/src/GUI/Inicio.java</file>
+            <file>file:/C:/Users/vivia/OneDrive/Documentos/Sistemas%20Operativos/SimuladorPlanificador/src/Model/Semaphore.java</file>
+            <file>file:/C:/Users/vivia/OneDrive/Documentos/Sistemas%20Operativos/SimuladorPlanificador/src/DataStruct/Queue.java</file>
+            <file>file:/C:/Users/vivia/OneDrive/Documentos/Sistemas%20Operativos/SimuladorPlanificador/src/Model/CPU.java</file>
+            <file>file:/C:/Users/vivia/OneDrive/Documentos/Sistemas%20Operativos/SimuladorPlanificador/src/simuladorplanificador/SimuladorPlanificador.java</file>
+            <file>file:/C:/Users/vivia/OneDrive/Documentos/Sistemas%20Operativos/SimuladorPlanificador/src/GUI/Diseño%20sin%20título%20(1).png</file>
+            <file>file:/C:/Users/vivia/OneDrive/Documentos/Sistemas%20Operativos/SimuladorPlanificador/src/GUI/SimuladorCPU.java</file>
+            <file>file:/C:/Users/vivia/OneDrive/Documentos/Sistemas%20Operativos/SimuladorPlanificador/src/Scheduler/Scheduler.java</file>
+            <file>file:/C:/Users/vivia/OneDrive/Documentos/Sistemas%20Operativos/SimuladorPlanificador/src/GUI/AddNewProcess.java</file>
+            <file>file:/C:/Users/vivia/OneDrive/Documentos/Sistemas%20Operativos/SimuladorPlanificador/src/Scheduler/RR.java</file>
+            <file>file:/C:/Users/vivia/OneDrive/Documentos/Sistemas%20Operativos/SimuladorPlanificador/src/GUI/PanelProcesos.java</file>
+            <file>file:/C:/Users/vivia/OneDrive/Documentos/Sistemas%20Operativos/SimuladorPlanificador/src/GUI/PanelRound.java</file>
+            <file>file:/C:/Users/vivia/OneDrive/Documentos/Sistemas%20Operativos/SimuladorPlanificador/src/Model/Process.java</file>
+            <file>file:/C:/Users/vivia/OneDrive/Documentos/Sistemas%20Operativos/SimuladorPlanificador/src/GUI/Diseño%20sin%20título%20(2).png</file>
         </group>
     </open-files>
 </project-private>

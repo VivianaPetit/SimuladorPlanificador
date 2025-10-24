@@ -2,7 +2,7 @@ package Scheduler;
 
 import DataStruct.LinkedList;
 import DataStruct.Queue;
-import Model.PCB;
+import Model.Process;
 
 /**
  * Planificador Feedback Multinivel (MLFQ).
@@ -49,7 +49,7 @@ public class Feedback implements Scheduler {
     // =================== Métodos Scheduler ===================
 
     @Override
-    public PCB nextProcess(Queue readyQueue) {
+    public Process nextProcess(Queue readyQueue) {
         // No se usa este método; la CPU llamará getNextProcess() directamente
         return null;
     }
@@ -64,13 +64,13 @@ public class Feedback implements Scheduler {
 
     /**
      * Obtiene el siguiente proceso listo del nivel más alto disponible.
-     * @return PCB listo o null si no hay procesos
+     * @return Process listo o null si no hay procesos
      */
-    public PCB getNextProcess() {
+    public Process getNextProcess() {
     for (int i = 0; i < levels; i++) {
         Queue q = queues.getElementGeneric(i);
         if (q != null && !q.isEmpty()) {
-            PCB p = (PCB) q.dispatch();
+            Process p = (Process) q.dispatch();
             p.setCurrentLevel(i); // 👈 guardar nivel actual
             System.out.println("[Feedback] Proceso " + p.getPid() + " obtenido del nivel " + i);
             return p;
@@ -85,7 +85,7 @@ public class Feedback implements Scheduler {
      * @param p proceso a reencolar
      * @param currentLevel nivel actual
      */
-//    public void requeueProcess(PCB p, int currentLevel) {
+//    public void requeueProcess(Process p, int currentLevel) {
 //        if (p.getRemainingInstructions() > 0) {
 //            
 //            int nextLevel = Math.min(currentLevel + 1, levels - 1); // degradación
@@ -96,11 +96,11 @@ public class Feedback implements Scheduler {
 //                               " en nivel " + nextLevel +
 //                               " | instrucciones restantes: " + p.getRemainingInstructions());
 //        } else {
-//            p.setStatus(PCB.Status.TERMINATED);
+//            p.setStatus(Process.Status.TERMINATED);
 //            System.out.println("[Feedback] Proceso " + p.getPid() + " terminado.");
 //        }
 //    }
-    public void requeueProcess(PCB p, int currentLevel) {
+    public void requeueProcess(Process p, int currentLevel) {
     if (p.getRemainingInstructions() > 0) {
 
         // 🔹 Asegurarse de que las colas están bien creadas
@@ -112,7 +112,7 @@ public class Feedback implements Scheduler {
         // 🔹 Calcular el nuevo nivel (degradación controlada)
         int nextLevel = Math.min(currentLevel + 1, levels - 1);
         p.setCurrentLevel(nextLevel);
-        p.setStatus(PCB.Status.READY);
+        p.setStatus(Process.Status.READY);
 
         Queue nextQueue = queues.getElementGeneric(nextLevel);
         if (nextQueue == null) {
@@ -132,7 +132,7 @@ public class Feedback implements Scheduler {
         }
 
     } else {
-        p.setStatus(PCB.Status.TERMINATED);
+        p.setStatus(Process.Status.TERMINATED);
         System.out.println("[Feedback] Proceso " + p.getPid() + " terminado.");
     }
 }
@@ -143,21 +143,21 @@ public class Feedback implements Scheduler {
      * Agrega un proceso nuevo al nivel más alto (nivel 0)
      * @param p proceso a agregar
      */
-//    public void addNewProcess(PCB p) {
-//        p.setStatus(PCB.Status.READY);
+//    public void addNewProcess(Process p) {
+//        p.setStatus(Process.Status.READY);
 //        Queue q = queues.getElementGeneric(0);
 //        q.enqueue(p);
 //        System.out.println("[Feedback] Proceso " + p.getPid() + " agregado al nivel 0.");
 //    }
     
-    public void addNewProcess(PCB p) {
+    public void addNewProcess(Process p) {
     // 🔹 Evitar duplicados en niveles inferiores
     for (int i = 0; i < levels; i++) {
         Queue q = queues.getElementGeneric(i);
         if (q != null) q.remove(p);
     }
 
-    p.setStatus(PCB.Status.READY);
+    p.setStatus(Process.Status.READY);
     p.setCurrentLevel(0);
     Queue q = queues.getElementGeneric(0);
     q.enqueue(p);

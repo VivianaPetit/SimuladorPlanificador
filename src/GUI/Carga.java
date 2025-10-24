@@ -8,7 +8,7 @@ import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import DataStruct.LinkedList;
-import Model.PCB;
+import Model.Process;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -20,7 +20,7 @@ import java.io.FileReader;
  */
 public class Carga extends javax.swing.JFrame {
     
-    private LinkedList<PCB> listaProcesos = new LinkedList<>();
+    private LinkedList<Process> listaProcesos = new LinkedList<>();
     private File archivoSeleccionado; // <-- Aquí la declaramos como atributo
 
     /**
@@ -168,7 +168,7 @@ public class Carga extends javax.swing.JFrame {
             int priority = Integer.parseInt(datos[7].trim());
             int arrivalTime = Integer.parseInt(datos[8].trim());
 
-            PCB proceso = new PCB(pid, nombre, totalInstructions, cpuBound,
+            Process proceso = new Process(pid, nombre, totalInstructions, cpuBound,
                                   cyclesToException, exceptionServiceCycles,
                                   memoryNeeded, priority, arrivalTime);
 

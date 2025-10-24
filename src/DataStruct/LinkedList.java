@@ -4,7 +4,7 @@
  */
 package DataStruct;
 
-import Model.PCB;
+import Model.Process;
 
 /**
  *
@@ -53,12 +53,12 @@ public class LinkedList<E> {
         length++;
     }
     
-     public PCB getElementIn(int posicion) {
+     public Process getElementIn(int posicion) {
         if (posicion < 0 || posicion >= length) {
             System.out.println("La posición debe estar entre 0 y " + (length - 1));
         }
          
-        Nodo<PCB> actualNodo = (Nodo<PCB>) first;
+        Nodo<Process> actualNodo = (Nodo<Process>) first;
         
         for (int i = 0; i < posicion; i++) {
             actualNodo = actualNodo.getNext();

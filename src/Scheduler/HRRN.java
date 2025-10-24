@@ -1,6 +1,6 @@
 package Scheduler;
 
-import Model.PCB;
+import Model.Process;
 import DataStruct.Queue;
 import java.util.ArrayList;
 import java.util.List;
@@ -18,24 +18,24 @@ public class HRRN implements Scheduler {
     }
 
     @Override
-    public PCB nextProcess(Queue readyQueue) {
+    public Process nextProcess(Queue readyQueue) {
         if (readyQueue.isEmpty()) {
             System.out.println("[HRRN] No hay procesos listos.");
             return null; // evita NPE
         }
 
         // Copiar todos los procesos de la cola en una lista temporal
-        List<PCB> procesos = new ArrayList<>();
+        List<Process> procesos = new ArrayList<>();
         while (!readyQueue.isEmpty()) {
-            procesos.add((PCB) readyQueue.dispatch());
+            procesos.add((Process) readyQueue.dispatch());
         }
 
-        PCB elegido = null;
+        Process elegido = null;
         double maxRatio = -1;
 
         // Calcular Response Ratio (RR) para cada proceso READY que ya llegó
-        for (PCB p : procesos) {
-            if (p.getStatus() != PCB.Status.READY) continue; // solo READY
+        for (Process p : procesos) {
+            if (p.getStatus() != Process.Status.READY) continue; // solo READY
             if (p.getArrivalTime() > currentTime) continue; // aún no ha llegado
 
             int waitingTime = (int) Math.max(0, currentTime - p.getArrivalTime());
@@ -61,8 +61,8 @@ public class HRRN implements Scheduler {
         }
 
         // Reencolar todos los procesos que no se eligieron, o que no estaban READY
-        for (PCB p : procesos) {
-            if (p != elegido && p.getStatus() == PCB.Status.READY) {
+        for (Process p : procesos) {
+            if (p != elegido && p.getStatus() == Process.Status.READY) {
                 readyQueue.enqueue(p);
             }
         }
@@ -87,8 +87,8 @@ public class HRRN implements Scheduler {
         boolean found = false;
 
         while (!readyQueue.isEmpty()) {
-            PCB p = (PCB) readyQueue.dispatch();
-            if (p.getStatus() == PCB.Status.READY && p.getArrivalTime() <= currentTime) {
+            Process p = (Process) readyQueue.dispatch();
+            if (p.getStatus() == Process.Status.READY && p.getArrivalTime() <= currentTime) {
                 found = true;
             }
             tempQueue.enqueue(p);

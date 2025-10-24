@@ -4,7 +4,7 @@
  */
 package Scheduler;
 
-import Model.PCB;
+import Model.Process;
 import DataStruct.Queue;  // 
 
 /**
@@ -14,9 +14,9 @@ import DataStruct.Queue;  //
 public class FCFS implements Scheduler {
 
     @Override
-    public PCB nextProcess(Queue readyQueue) {
+    public Process nextProcess(Queue readyQueue) {
         if (!readyQueue.isEmpty()) {
-            PCB next = (PCB) readyQueue.dispatch(); // extrae el primero en la cola
+            Process next = (Process) readyQueue.dispatch(); // extrae el primero en la cola
             System.out.println("[Scheduler FCFS] Proceso " + next.getPid() + " seleccionado para ejecución.");
             return next;
         }

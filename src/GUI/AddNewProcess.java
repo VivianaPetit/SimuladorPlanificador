@@ -24,6 +24,7 @@ public class AddNewProcess extends javax.swing.JFrame {
         this.setTitle("Crear Proceso");
 
     }
+    
 
     /**
      * This method is called from within the constructor to initialize the form.

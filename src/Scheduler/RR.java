@@ -1,7 +1,7 @@
 
 package Scheduler;
 
-import Model.PCB;
+import Model.Process;
 import DataStruct.Queue;
 
 public class RR implements Scheduler {
@@ -12,17 +12,17 @@ public class RR implements Scheduler {
         this.quantum = quantum;
     }
 
-    public void addProcess(PCB process, Queue readyQueue) {
-        process.setStatus(PCB.Status.READY);
+    public void addProcess(Process process, Queue readyQueue) {
+        process.setStatus(Process.Status.READY);
         readyQueue.enqueue(process);
         System.out.println("[Scheduler RR] Proceso " + process.getPid() + " agregado a la cola.");
     }
 
     @Override
-    public PCB nextProcess(Queue readyQueue) {
+    public Process nextProcess(Queue readyQueue) {
         if (!readyQueue.isEmpty()) {
             
-            return (PCB) readyQueue.dispatch();
+            return (Process) readyQueue.dispatch();
         }
         return null;
     }
@@ -36,13 +36,13 @@ public class RR implements Scheduler {
         return quantum;
     }
 
-    public void requeueIfNeeded(PCB process, Queue readyQueue) {
+    public void requeueIfNeeded(Process process, Queue readyQueue) {
         if (process.getRemainingInstructions() > 0) {
             addProcess(process, readyQueue);
             System.out.println("[Scheduler RR] Proceso " + process.getPid() +
                     " reencolado con " + process.getRemainingInstructions() + " instrucciones restantes.");
         } else {
-            process.setStatus(PCB.Status.TERMINATED);
+            process.setStatus(Process.Status.TERMINATED);
             System.out.println("[Scheduler RR] Proceso " + process.getPid() + " terminó.");
         }
     }

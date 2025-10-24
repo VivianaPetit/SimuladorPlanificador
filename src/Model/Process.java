@@ -10,12 +10,12 @@ package Model;
  */
 
 /**
- * Representa un proceso dentro del simulador del planificador de CPU.
- * Cada PCB tiene su propio hilo y se sincroniza con el CPU mediante semáforos.
+ * Proceso dentro del simulador del planificador de CPU.
+ * Cada proceso tiene su propio hilo.
  */
-public class PCB implements Runnable {
+public class Process implements Runnable {
 
-    // ======== Atributos básicos del proceso ========
+    // PCB
     private int pid;
     private String name;
     private int totalInstructions;
@@ -37,14 +37,10 @@ public class PCB implements Runnable {
     private int startTime;
     private int finishTime;
     private Status status;
-
-    //  Sincronización 
-    private final Semaphore canRun = new Semaphore(0); // CPU da permiso
-    private final Semaphore done = new Semaphore(0);   // Proceso avisa al CPU
     private Thread thread; // hilo interno que representa al proceso
 
    
-    public PCB(int pid, String name, int totalInstructions, boolean cpuBound,
+    public Process(int pid, String name, int totalInstructions, boolean cpuBound,
                int cyclesToException, int exceptionServiceCycles,
                int memoryNeeded, int priority, int arrivalTime) {
 
@@ -69,37 +65,37 @@ public class PCB implements Runnable {
     //  Ejecución del proceso 
     @Override
     public void run() {
-        try {
-            while (remainingInstructions > 0) {
-                // Espera permiso del CPU
-                canRun.acquire();
-
-                // Cambia estado a RUNNING
-                setStatus(Status.RUNNING);
-
-                // Simula ejecución de una instrucción
-                pc++;
-                mar++;
-                remainingInstructions--;
-
-                System.out.println("[Proceso " + pid + "] Ejecutando instrucción " +
-                        (totalInstructions - remainingInstructions) +
-                        " | PC=" + pc + " | MAR=" + mar);
-
-                // Simula duración del ciclo (tiempo de CPU)
-                Thread.sleep(200);
-
-                // Notifica al CPU que terminó esta instrucción
-                done.release();
-            }
-
-            // Cuando termina todas las instrucciones
-            setStatus(Status.TERMINATED);
-            System.out.println("[Proceso " + pid + "] Finalizado.");
-
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
+//        try {
+//            while (remainingInstructions > 0) {
+//                // Espera permiso del CPU
+//                canRun.acquire();
+//
+//                // Cambia estado a RUNNING
+//                setStatus(Status.RUNNING);
+//
+//                // Simula ejecución de una instrucción
+//                pc++;
+//                mar++;
+//                remainingInstructions--;
+//
+//                System.out.println("[Proceso " + pid + "] Ejecutando instrucción " +
+//                        (totalInstructions - remainingInstructions) +
+//                        " | PC=" + pc + " | MAR=" + mar);
+//
+//                // Simula duración del ciclo (tiempo de CPU)
+//                Thread.sleep(200);
+//
+//                // Notifica al CPU que terminó esta instrucción
+//                done.release();
+//            }
+//
+//            // Cuando termina todas las instrucciones
+//            setStatus(Status.TERMINATED);
+//            System.out.println("[Proceso " + pid + "] Finalizado.");
+//
+//        } catch (InterruptedException e) {
+//            Thread.currentThread().interrupt();
+//        }
     }
 
     //  Control del hilo 
@@ -213,14 +209,6 @@ public class PCB implements Runnable {
 
     public int getPriority() {
         return priority;
-    }
-
-    public Semaphore getCanRun() {
-        return canRun;
-    }
-
-    public Semaphore getDone() {
-        return done;
     }
     
     public int getCurrentLevel() { 

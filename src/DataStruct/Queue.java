@@ -4,7 +4,7 @@
  */
 package DataStruct;
 import Scheduler.Feedback;
-import Model.PCB;
+import Model.Process;
 
 public class Queue {
     private Nodo head, tail;
@@ -97,13 +97,13 @@ public class Queue {
         }
     }
     
-    private int findProcessLevel(Feedback fb, PCB p) {
+    private int findProcessLevel(Feedback fb, Process p) {
     for (int i = 0; i < fb.getQueues().getLenght(); i++) {
         Queue q = fb.getQueues().getElementGeneric(i);
         Nodo current = q.getHead();
         while (current != null) {
             Object elem = current.getElement();
-            if (elem instanceof PCB pcb && pcb == p) {
+            if (elem instanceof Process pcb && pcb == p) {
                 return i; // nivel donde está el proceso
             }
             current = current.getNext();
