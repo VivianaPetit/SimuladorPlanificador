@@ -18,7 +18,6 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.FlowLayout;
 import java.awt.Font;
 import java.util.Random;
 import javax.swing.*;
@@ -123,19 +122,35 @@ public class SimuladorCPU extends javax.swing.JFrame {
             politica.setText(nombre);
         }
         
+//        private void cambiarPlanificador(Scheduler nuevoScheduler) {
+//            this.scheduler = nuevoScheduler;
+//            cpu.setScheduler(nuevoScheduler);
+//
+//            String nombre = nuevoScheduler.getClass().getSimpleName();
+//            actualizarLabelPolitica(nombre);
+//
+//            JOptionPane.showMessageDialog(this,
+//                "Planificador cambiado a: " + nombre,
+//                "Cambio de planificación",
+//                JOptionPane.INFORMATION_MESSAGE
+//            );
+//            System.out.println("Planificador cambiado a: " + nombre);
+//        }
+        
         private void cambiarPlanificador(Scheduler nuevoScheduler) {
-            this.scheduler = nuevoScheduler;
-            cpu.setScheduler(nuevoScheduler);
+            // Llamamos al método de la CPU que maneja el cambio de scheduler y reencola los procesos
+            cpu.cambiarScheduler(nuevoScheduler);
 
-            String nombre = nuevoScheduler.getClass().getSimpleName();
-            actualizarLabelPolitica(nombre);
+            // Actualizar el label de la política en la GUI
+            actualizarLabelPolitica(nuevoScheduler.getClass().getSimpleName());
 
             JOptionPane.showMessageDialog(this,
-                "Planificador cambiado a: " + nombre,
+                "Planificador cambiado a: " + nuevoScheduler.getClass().getSimpleName(),
                 "Cambio de planificación",
                 JOptionPane.INFORMATION_MESSAGE
             );
-            System.out.println("Planificador cambiado a: " + nombre);
+
+            System.out.println("Planificador cambiado a: " + nuevoScheduler.getClass().getSimpleName());
         }
 
         private void iniciarReloj(int intervaloMs) {
@@ -270,18 +285,29 @@ public class SimuladorCPU extends javax.swing.JFrame {
         colaBloqueado.removeAll();
         colaTerminado.removeAll();
  
-        Process procesoEnCPU = null;
-
+        Process procesoEnCPU = cpu.getCurrentProcess();
+        
         // Agregar procesos a su panel correspondiente
         for (int i = 0; i < procesos.getLenght(); i++) {
             Process p = procesos.getElementIn(i);
             JPanel tarjeta = crearTarjetaProceso(p);
+            
+            // Si es el proceso activo en CPU, forzamos a mostrarlo ahí
+            if (p == procesoEnCPU) {
+                procesoejecucion.setText(procesoEnCPU.getName());
+                pcCPU.setText("" + procesoEnCPU.getPc());
+                marCPU.setText("" + procesoEnCPU.getMar());
+                statusCPU.setText(procesoEnCPU.getStatus().toString());
+                tipoCPU.setText(procesoEnCPU.isCpuBound() ? "CPU bound" : "I/O bound");
+                continue;
+            }
+           
 
             switch (p.getStatus()) {
                 case READY -> colaListo.add(tarjeta);
                 case BLOCKED -> colaBloqueado.add(tarjeta);
                 case TERMINATED -> colaTerminado.add(tarjeta);
-                case RUNNING -> procesoEnCPU = p;
+                //case RUNNING -> procesoEnCPU = p;
             }
         }
         
@@ -321,6 +347,45 @@ public class SimuladorCPU extends javax.swing.JFrame {
         CPU.revalidate();
         CPU.repaint();
     }
+    
+    private void actualizarPaneles2(LinkedList<Process> procesos) {
+    // Limpiar paneles
+    colaListo.removeAll();
+    colaBloqueado.removeAll();
+    colaTerminado.removeAll();
+    CPU.removeAll();
+
+    Process procesoEnCPU = cpu.getCurrentProcess(); // <-- obtenemos el que está corriendo
+
+    // Agregar procesos a su panel correspondiente
+    for (int i = 0; i < procesos.getLenght(); i++) {
+        Process p = procesos.getElementIn(i);
+        JPanel tarjeta = crearTarjetaProceso(p);
+
+        // Si es el proceso activo en CPU, forzamos a mostrarlo ahí
+        if (p == procesoEnCPU) {
+            CPU.add(tarjeta);
+            continue;
+        }
+
+        switch (p.getStatus()) {
+            case READY -> colaListo.add(tarjeta);
+            case BLOCKED -> colaBloqueado.add(tarjeta);
+            case TERMINATED -> colaTerminado.add(tarjeta);
+            // no necesitamos RUNNING aquí porque el activo ya fue agregado
+        }
+    }
+
+    // Actualizar interfaz
+    colaListo.revalidate();
+    colaListo.repaint();
+    colaBloqueado.revalidate();
+    colaBloqueado.repaint();
+    colaTerminado.revalidate();
+    colaTerminado.repaint();
+    CPU.revalidate();
+    CPU.repaint();
+}
 
 
     /**

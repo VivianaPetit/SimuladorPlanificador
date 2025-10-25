@@ -40,6 +40,8 @@ public class CPU {
     private Queue runningQueue;
     private Queue finishedQueue;
     Semaphore ioSemaphore = new Semaphore(1); // solo un dispositivo de E/S disponible
+    private Process procesoActual; // nuevo
+    private Process currentProcess;  
 
     private static final int PROCESS_SWITCH_COST = 2;  // cambio de proceso
     private static final int IO_INTERRUPT_COST = 2;     // atención de interrupción E/S
@@ -64,8 +66,8 @@ public class CPU {
         this.finishedQueue = new Queue();
     }
 
-    public void ejecutar() {
-        Process currentProcess = null;
+        public void ejecutar() {
+        
         int rrQuantumCounter = 0;
         int feedbackQuantumCounter = 0;
         boolean interruptedByIO = false; // para interrumpir la cpu si I/O termina
@@ -112,27 +114,23 @@ public class CPU {
 
                 if (fbScheduler != null) {
                     // Feedback selection
-                    Process selected = fbScheduler.getNextProcess();
+                    currentProcess = fbScheduler.getNextProcess();
+                    procesoActual = currentProcess;
                     feedbackQuantumCounter = 0;
-                    if (selected != null) {
-                        System.out.println("[CPU] SO despachando proceso (coste " + DISPATCH_COST + " ciclos) -> proceso " + selected.getPid());
-                        ejecutarSO(DISPATCH_COST);
-                        
-                        currentProcess = selected;
+                    if (currentProcess != null) {
                         currentProcess.setStatus(Process.Status.RUNNING);
                         runningQueue.enqueue(currentProcess);
+                        System.out.println("[CPU] Despachando (Feedback) proceso " + currentProcess.getPid());
                     }
                 } else {
                     // Normal scheduler (RR, FCFS, SRT, SPN, HRRN)
-                    Process selected = scheduler.nextProcess(readyQueue);
+                    currentProcess = scheduler.nextProcess(readyQueue);
+                    procesoActual = currentProcess;
                     rrQuantumCounter = 0;
-                    if (selected != null) {
-                        System.out.println("[CPU] SO despachando proceso (coste " + DISPATCH_COST + " ciclos) -> proceso " + selected.getPid());
-                        ejecutarSO(DISPATCH_COST);
-                        
-                        currentProcess = selected; 
+                    if (currentProcess != null) {
                         currentProcess.setStatus(Process.Status.RUNNING);
                         runningQueue.enqueue(currentProcess);
+                        System.out.println("[CPU] Despachando proceso " + currentProcess.getPid());
                     }
                 }
             }
@@ -153,7 +151,6 @@ public class CPU {
             // 4) Antes de ejecutar la instrucción: comprobar e/s del proceso actual
             if (!currentProcess.isCpuBound() && currentProcess.getCyclesToException() == 0) {
                 System.out.println("[Clock " + currentTime + "] Proceso " + currentProcess.getPid() + " genera excepción de E/S -> BLOQUEADO");
-                ejecutarSO(IO_INTERRUPT_COST);
                 currentProcess.setStatus(Process.Status.BLOCKED);
                 blockedQueue.enqueue(currentProcess);
                 runningQueue.remove(currentProcess);
@@ -189,32 +186,31 @@ public class CPU {
 
                             // encolar de vuelta (si Feedback, al nivel 0; si no, a readyQueue)
                         if (fbScheduler != null) {
-                         
-                            System.out.println("[Clock " + currentTime + "] [I/O] E/S completada: proceso " +
-                                               ioProc.getPid() + " -> Feedback nivel 0");
                             synchronized (fbScheduler) {
                                 // Eliminar el proceso de cualquier cola de Feedback donde aún esté
                                 for (int i = 0; i < fbScheduler.getQueues().getLenght(); i++) {
                                     Queue q = fbScheduler.getQueues().getElementGeneric(i);
                                     if (q != null) q.remove(ioProc);
                                 }
+
                                 //  Eliminarlo de bloqueados auxiliares
                                 blockedQueueAux.remove(ioProc);
 
                                 // Reinsertar limpio en nivel 0
                                 fbScheduler.addNewProcess(ioProc);
                             }
-                            
-                        } else {
                             System.out.println("[Clock " + currentTime + "] [I/O] E/S completada: proceso " +
-                                               ioProc.getPid() + " -> ready");
+                                               ioProc.getPid() + " -> Feedback nivel 0");
+                        } else {
                             synchronized (readyQueue) {
                                 readyQueue.enqueue(ioProc);
                                 blockedQueueAux.remove(ioProc); // también eliminar en este caso
                             }
+                            System.out.println("[Clock " + currentTime + "] [I/O] E/S completada: proceso " +
+                                               ioProc.getPid() + " -> ready");
                         }
 
-                        ejecutarSO(IO_INTERRUPT_COST);
+
                         // notificar al loop principal que algo nuevo está listo (posible preempción)
                         synchronized (arrivalLock) { arrivalLock.notifyAll(); }
                     } catch (InterruptedException e) {
@@ -224,7 +220,7 @@ public class CPU {
                     }
                 }).start();
 
-                // pasar al siguiente ciclo
+                // pasar al siguiente ciclo (ya incrementaremos tiempo luego)
                 continue;
             }
 
@@ -302,11 +298,8 @@ public class CPU {
                 blockedQueue.remove(currentProcess);
                 finishedQueue.enqueue(currentProcess);
                 System.out.println("[Clock " + currentTime + "] [CPU] Proceso " + currentProcess.getPid() + " finalizado.");
-                if (!readyQueue.isEmpty() || !blockedQueueAux.isEmpty()) {
-                    System.out.println("[CPU] SO realiza cambio de proceso (" + PROCESS_SWITCH_COST + " ciclos)");
-                }
-                ejecutarSO(PROCESS_SWITCH_COST);
                 currentProcess = null;
+                 procesoActual = null; 
                 rrQuantumCounter = 0;
                 feedbackQuantumCounter = 0;
                 continue;
@@ -327,9 +320,7 @@ public class CPU {
     //                continue;
                     System.out.println("[Scheduler SRT] Preempción: proceso " + currentProcess.getPid() +
                                        " reencolado por " + shortest.getPid());
-                    
-                    System.out.println("[CPU] SO realiza cambio de proceso (" + PROCESS_SWITCH_COST + " ciclos)");
-                    ejecutarSO(PROCESS_SWITCH_COST);
+
                     // Quitar del runningQueue ANTES de reencolar
                     runningQueue.remove(currentProcess);
 
@@ -339,10 +330,14 @@ public class CPU {
 
                     // Limpiar referencias
                     currentProcess = null;
+                    procesoActual = null; // <- AGREGAR
                     rrQuantumCounter = 0;
                     continue;
                 }
             }
+
+            // -- SPN: normalmente no preemptiva; nada que hacer (si quieres preemptiva conviértela en SRT)
+            // -- HRRN: se actualiza antes de selección (no preemptiva por lo general)
 
             // -- RR: controlar quantum
             if (scheduler instanceof RR) {
@@ -350,8 +345,6 @@ public class CPU {
                 int quantum = ((RR) scheduler).getQuantum();
                 if (rrQuantumCounter >= quantum) {
                     System.out.println("[Scheduler RR] Quantum terminado, reencolando proceso " + currentProcess.getPid());
-                    System.out.println("[CPU] SO realiza cambio de proceso (" + PROCESS_SWITCH_COST + " ciclos)");
-                    ejecutarSO(PROCESS_SWITCH_COST);
                     addProcess(currentProcess);
                     runningQueue.remove(currentProcess);
                     currentProcess.setStatus(Process.Status.READY);
@@ -370,8 +363,6 @@ public class CPU {
                     System.out.println("[Scheduler Feedback] Quantum terminado para proceso " + currentProcess.getPid() +
                                        " en nivel " + currentLevel + ". Reencolando / degradando nivel.");
                     fbScheduler.requeueProcess(currentProcess, currentLevel);
-                    System.out.println("[CPU] SO realiza cambio de proceso (" + PROCESS_SWITCH_COST + " ciclos)");
-                    ejecutarSO(PROCESS_SWITCH_COST);
                     currentProcess.setStatus(Process.Status.READY);
                     currentProcess = null;
                     feedbackQuantumCounter = 0;
@@ -564,6 +555,53 @@ public class CPU {
     return lista;
 }
    
+   public void cambiarScheduler(Scheduler newScheduler) {
+    System.out.println("[CPU] Cambiando scheduler a: " + newScheduler.getClass().getSimpleName());
+
+    // 1) Guardar todos los procesos activos
+    LinkedList<Process> todosProcesos = obtenerTodosLosProcesos();
+
+    // 2) Limpiar referencias al scheduler anterior si era Feedback
+    if (scheduler instanceof Feedback oldFb) {
+        LinkedList<Queue> fbQueues = oldFb.getQueues();
+        for (int i = 0; i < fbQueues.getLenght(); i++) {
+            Queue q = fbQueues.getElementGeneric(i);
+            Nodo nodo = q.getHead();
+            while (nodo != null) {
+                Object elem = nodo.getElement();
+                q.remove(elem);
+                nodo = nodo.getNext();
+            }
+        }
+        fbScheduler = null;
+    }
+
+    // 3) Asignar nuevo scheduler
+    scheduler = newScheduler;
+    if (scheduler instanceof Feedback fb) {
+        fbScheduler = fb;
+    }
+
+    // 4) Reinsertar procesos en el nuevo scheduler
+    for (int i = 0; i < todosProcesos.getLenght(); i++) {
+        Process p = todosProcesos.getElementGeneric(i);
+
+        if (p.getStatus() != Process.Status.TERMINATED) {
+            // Solo reintegrar los procesos que NO estén ejecutándose actualmente
+            if (p != currentProcess) {
+                p.setStatus(Process.Status.READY);
+                if (fbScheduler != null) {
+                    fbScheduler.addNewProcess(p);
+                } else {
+                    addProcess(p);
+                }
+            }
+        }
+    }
+
+    System.out.println("[CPU] Scheduler cambiado correctamente.");
+}
+   
    public Object getScheduler(){
        return this.scheduler;
    }
@@ -592,6 +630,10 @@ public class CPU {
    }
    public String getTipo() { 
        return tipo; 
+   }
+   
+   public Process getCurrentProcess() {
+       return currentProcess;
    }
 
    
