@@ -25,7 +25,7 @@ import Scheduler.SPN;
 
 public class CPU {
     private Scheduler scheduler;
-    private int cycleDurationMs = 1000; // duración de cada ciclo (simulada) por default: 500
+    public static int cycleDurationMs = 500; // duración de cada ciclo (simulada) por default: 500
     private int currentTime = 0;
     private Feedback fbScheduler; 
     
