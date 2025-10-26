@@ -39,7 +39,12 @@ public class SimuladorCPU extends javax.swing.JFrame {
     private Thread cpuThread;
     private Thread uiThread;
     private ButtonGroup grupoPoliticas;
-    private RendimientoCPU graficoFrame;
+    private RendimientoCPU graficoFrame; 
+    private ThroughputChart panelThroughput;
+    
+    
+    private JTabbedPane tabbedPane;
+    private RendimientoCPU panelUtilizacionCPU;
   
     
 
@@ -93,8 +98,36 @@ public class SimuladorCPU extends javax.swing.JFrame {
         //CPU.setBackground(new Color(245, 245, 245));
         
         iniciarSimulacion();
+        configurarTodasLasGraficas();
 
     }
+    
+    
+    private void configurarGraficaUtilizacion() {
+    // Crear el panel de la gráfica
+    panelUtilizacionCPU = new RendimientoCPU();
+    
+    // Configurar el jPanel4 para contener la gráfica
+    jPanel4.setLayout(new java.awt.BorderLayout());
+    jPanel4.add(panelUtilizacionCPU, BorderLayout.CENTER);
+    
+    // Actualizar la interfaz
+    jPanel4.revalidate();
+    jPanel4.repaint();
+}
+    
+    private void configurarTodasLasGraficas() {
+    configurarGraficaUtilizacion();
+    configurarGraficaThroughput();
+}
+    
+    private void configurarGraficaThroughput() {
+    panelThroughput = new ThroughputChart();
+    jPanel5.setLayout(new BorderLayout());  // jPanel5 es el de Throughput
+    jPanel5.add(panelThroughput, BorderLayout.CENTER);
+    jPanel5.revalidate();
+    jPanel5.repaint();
+}
     
         public static LinkedList<Process> generarProcesosAleatorios(int cantidad) {
             LinkedList<Process> procesos = new LinkedList<>();
@@ -215,11 +248,24 @@ public class SimuladorCPU extends javax.swing.JFrame {
                 while (simulacionActiva) {
                     LinkedList<Process> listaProcesos = cpu.obtenerTodosLosProcesos();
                     SwingUtilities.invokeLater(() -> actualizarPaneles(listaProcesos));
-if (graficoFrame != null && graficoFrame.isVisible()) {
-    // Utilización instantánea: 100% si hay proceso, 0% si no
+if (panelUtilizacionCPU != null) {
     double utilizacionInstantanea = (cpu.getCurrentProcess() != null || cpu.isSoEjecutando()) ? 100.0 : 0.0;
-    graficoFrame.actualizarGrafico(tiempo, utilizacionInstantanea);
+    panelUtilizacionCPU.actualizarGrafico(tiempo, utilizacionInstantanea);
 }
+
+if (panelThroughput != null) {
+    // Contar procesos terminados
+    int procesosCompletados = 0;
+    LinkedList<Process> todosProcesos = cpu.obtenerTodosLosProcesos();
+    for (int i = 0; i < todosProcesos.getLenght(); i++) {
+        Process p = todosProcesos.getElementIn(i);
+        if (p.getStatus() == Process.Status.TERMINATED) {
+            procesosCompletados++;
+        }
+    }
+    panelThroughput.actualizarGrafico(tiempo, procesosCompletados);
+}
+
                     try {
                         Thread.sleep(200);
                     } catch (InterruptedException e) {
@@ -374,6 +420,7 @@ if (graficoFrame != null && graficoFrame.isVisible()) {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
+        jTabbedPane1 = new javax.swing.JTabbedPane();
         panelRound2 = new GUI.PanelRound();
         jScrollPane4 = new javax.swing.JScrollPane();
         colaListo = new javax.swing.JPanel();
@@ -408,6 +455,13 @@ if (graficoFrame != null && graficoFrame.isVisible()) {
         cycles = new javax.swing.JLabel();
         idleL = new javax.swing.JLabel();
         idle = new javax.swing.JLabel();
+        jPanel2 = new javax.swing.JPanel();
+        jTabbedPane2 = new javax.swing.JTabbedPane();
+        jPanel4 = new javax.swing.JPanel();
+        jPanel5 = new javax.swing.JPanel();
+        jPanel6 = new javax.swing.JPanel();
+        jPanel7 = new javax.swing.JPanel();
+        jPanel3 = new javax.swing.JPanel();
         jMenuBar1 = new javax.swing.JMenuBar();
         jMenu1 = new javax.swing.JMenu();
         jMenuItem2 = new javax.swing.JMenuItem();
@@ -422,8 +476,6 @@ if (graficoFrame != null && graficoFrame.isVisible()) {
         Feedback = new javax.swing.JRadioButtonMenuItem();
         RR = new javax.swing.JRadioButtonMenuItem();
         ms = new javax.swing.JMenuItem();
-        jMenu3 = new javax.swing.JMenu();
-        jMenuItem4 = new javax.swing.JMenuItem();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("Simulador de Planificador de Procesos");
@@ -434,6 +486,8 @@ if (graficoFrame != null && graficoFrame.isVisible()) {
         setPreferredSize(new java.awt.Dimension(1380, 800));
         setResizable(false);
         getContentPane().setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+
+        jTabbedPane1.setName("Simulador"); // NOI18N
 
         panelRound2.setBackground(new java.awt.Color(255, 255, 255));
         panelRound2.setMaximumSize(new java.awt.Dimension(1380, 800));
@@ -455,7 +509,7 @@ if (graficoFrame != null && graficoFrame.isVisible()) {
         );
         colaListoLayout.setVerticalGroup(
             colaListoLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 772, Short.MAX_VALUE)
+            .addGap(0, 816, Short.MAX_VALUE)
         );
 
         jScrollPane4.setViewportView(colaListo);
@@ -649,7 +703,92 @@ if (graficoFrame != null && graficoFrame.isVisible()) {
 
         panelRound2.add(CPULabel, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 50, 340, 470));
 
-        getContentPane().add(panelRound2, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 1460, 880));
+        jTabbedPane1.addTab("Simulador", panelRound2);
+
+        javax.swing.GroupLayout jPanel4Layout = new javax.swing.GroupLayout(jPanel4);
+        jPanel4.setLayout(jPanel4Layout);
+        jPanel4Layout.setHorizontalGroup(
+            jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 0, Short.MAX_VALUE)
+        );
+        jPanel4Layout.setVerticalGroup(
+            jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 0, Short.MAX_VALUE)
+        );
+
+        jTabbedPane2.addTab("Utilizacion del CPU", jPanel4);
+
+        javax.swing.GroupLayout jPanel5Layout = new javax.swing.GroupLayout(jPanel5);
+        jPanel5.setLayout(jPanel5Layout);
+        jPanel5Layout.setHorizontalGroup(
+            jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 0, Short.MAX_VALUE)
+        );
+        jPanel5Layout.setVerticalGroup(
+            jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 0, Short.MAX_VALUE)
+        );
+
+        jTabbedPane2.addTab("Throughput ", jPanel5);
+
+        javax.swing.GroupLayout jPanel6Layout = new javax.swing.GroupLayout(jPanel6);
+        jPanel6.setLayout(jPanel6Layout);
+        jPanel6Layout.setHorizontalGroup(
+            jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 0, Short.MAX_VALUE)
+        );
+        jPanel6Layout.setVerticalGroup(
+            jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 0, Short.MAX_VALUE)
+        );
+
+        jTabbedPane2.addTab(" Tiempo de respuesta ", jPanel6);
+
+        javax.swing.GroupLayout jPanel7Layout = new javax.swing.GroupLayout(jPanel7);
+        jPanel7.setLayout(jPanel7Layout);
+        jPanel7Layout.setHorizontalGroup(
+            jPanel7Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 0, Short.MAX_VALUE)
+        );
+        jPanel7Layout.setVerticalGroup(
+            jPanel7Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 0, Short.MAX_VALUE)
+        );
+
+        jTabbedPane2.addTab("Equidad ", jPanel7);
+
+        javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
+        jPanel2.setLayout(jPanel2Layout);
+        jPanel2Layout.setHorizontalGroup(
+            jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel2Layout.createSequentialGroup()
+                .addComponent(jTabbedPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 1350, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(0, 30, Short.MAX_VALUE))
+        );
+        jPanel2Layout.setVerticalGroup(
+            jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel2Layout.createSequentialGroup()
+                .addComponent(jTabbedPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 703, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(0, 97, Short.MAX_VALUE))
+        );
+
+        jTabbedPane1.addTab("Graficas", jPanel2);
+
+        javax.swing.GroupLayout jPanel3Layout = new javax.swing.GroupLayout(jPanel3);
+        jPanel3.setLayout(jPanel3Layout);
+        jPanel3Layout.setHorizontalGroup(
+            jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 1380, Short.MAX_VALUE)
+        );
+        jPanel3Layout.setVerticalGroup(
+            jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 800, Short.MAX_VALUE)
+        );
+
+        jTabbedPane1.addTab("Estadisticas", jPanel3);
+
+        getContentPane().add(jTabbedPane1, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, -1, -1));
+        jTabbedPane1.getAccessibleContext().setAccessibleName("Simulador");
 
         jMenu1.setText("Archivo");
         jMenu1.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -749,18 +888,6 @@ if (graficoFrame != null && graficoFrame.isVisible()) {
 
         jMenuBar1.add(jMenu2);
 
-        jMenu3.setText("Grafico");
-
-        jMenuItem4.setText("Mostrar Grafico de Rendimiento");
-        jMenuItem4.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem4ActionPerformed(evt);
-            }
-        });
-        jMenu3.add(jMenuItem4);
-
-        jMenuBar1.add(jMenu3);
-
         setJMenuBar(jMenuBar1);
 
         pack();
@@ -816,13 +943,6 @@ if (graficoFrame != null && graficoFrame.isVisible()) {
         v3.setVisible(true);
         
     }//GEN-LAST:event_msMousePressed
-
-    private void jMenuItem4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem4ActionPerformed
-    if (graficoFrame == null || !graficoFrame.isVisible()) {
-        graficoFrame = new RendimientoCPU();
-        graficoFrame.setVisible(true);
-    }  
-    }//GEN-LAST:event_jMenuItem4ActionPerformed
 
     /**
      * @param args the command line arguments
@@ -888,18 +1008,24 @@ if (graficoFrame != null && graficoFrame.isVisible()) {
     private javax.swing.JLabel jLabel9;
     private javax.swing.JMenu jMenu1;
     private javax.swing.JMenu jMenu2;
-    private javax.swing.JMenu jMenu3;
     private javax.swing.JMenuBar jMenuBar1;
     private javax.swing.JMenuItem jMenuItem1;
     private javax.swing.JMenuItem jMenuItem2;
     private javax.swing.JMenuItem jMenuItem3;
-    private javax.swing.JMenuItem jMenuItem4;
     private javax.swing.JPanel jPanel1;
+    private javax.swing.JPanel jPanel2;
+    private javax.swing.JPanel jPanel3;
+    private javax.swing.JPanel jPanel4;
+    private javax.swing.JPanel jPanel5;
+    private javax.swing.JPanel jPanel6;
+    private javax.swing.JPanel jPanel7;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane3;
     private javax.swing.JScrollPane jScrollPane4;
     private javax.swing.JScrollPane jScrollPane5;
     private javax.swing.JScrollPane jScrollPane6;
+    private javax.swing.JTabbedPane jTabbedPane1;
+    private javax.swing.JTabbedPane jTabbedPane2;
     private javax.swing.JLabel lblReloj;
     private javax.swing.JLabel marCPU;
     private javax.swing.JMenu menupoliticas;
