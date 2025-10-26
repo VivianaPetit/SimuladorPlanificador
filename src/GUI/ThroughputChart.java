@@ -14,6 +14,7 @@ import org.jfree.chart.JFreeChart;
 import org.jfree.data.category.DefaultCategoryDataset;
 import javax.swing.JPanel;
 import java.awt.BorderLayout;
+import Model.CPU;
 
 public class ThroughputChart extends JPanel {
     private DefaultCategoryDataset dataset;
@@ -30,23 +31,27 @@ public class ThroughputChart extends JPanel {
     }
 
     private void crearGrafico() {
-        dataset = new DefaultCategoryDataset();
-        
-        JFreeChart chart = ChartFactory.createLineChart(
-            "Throughput - Procesos Completados por Tiempo",
-            "Tiempo (ciclos)", 
-            "Procesos Completados",
-            dataset
-        );
+    dataset = new DefaultCategoryDataset();
+    
+    JFreeChart chart = ChartFactory.createLineChart(
+        "Throughput - Procesos Completados por Unidad de Tiempo",
+        "Tiempo (ciclos)", 
+        "Throughput (procesos/ciclo)",  // ← CORREGIDO
+        dataset
+    );
 
-        ChartPanel chartPanel = new ChartPanel(chart);
-        chartPanel.setPreferredSize(new java.awt.Dimension(600, 400));
-        add(chartPanel, BorderLayout.CENTER);
-    }
+    ChartPanel chartPanel = new ChartPanel(chart);
+    chartPanel.setPreferredSize(new java.awt.Dimension(600, 400));
+    add(chartPanel, BorderLayout.CENTER);
+}
 
-    public void actualizarGrafico(int ciclo, int procesosCompletados) {
-        if (dataset != null) {
-            dataset.addValue(procesosCompletados, "Throughput", "" + ciclo);
-        }
+    private double throughputFinal = 0.0;
+
+public void actualizarGrafico(int ciclo, int procesosCompletados) {
+    if (dataset != null && ciclo > 0) {
+        double throughput = (double) procesosCompletados / ciclo;
+        dataset.addValue(throughput, "Throughput", "" + ciclo);
     }
 }
+}
+

@@ -172,19 +172,6 @@ public class CPU {
                         ioProc.setStatus(Process.Status.READY);
                         ioProc.setCyclesToException(-1); // evitar nuevas excepciones si ese es el comportamiento deseado
 
-                        // encolar de vuelta (si Feedback, al nivel 0; si no, a readyQueue)
-    //                    if (fbScheduler != null) {
-    //                        synchronized (fbScheduler) {
-    //                            fbScheduler.addNewProcess(ioProc);
-    //                        }
-    //                        System.out.println("[Clock " + currentTime + "] [I/O] E/S completada: proceso " + ioProc.getPid() + " -> Feedback nivel 0");
-    //                    } else {
-    //                        synchronized (readyQueue) {
-    //                            readyQueue.enqueue(ioProc);
-    //                            blockedQueueAux.remove(ioProc);
-    //                        }
-    //                        System.out.println("[Clock " + currentTime + "] [I/O] E/S completada: proceso " + ioProc.getPid() + " -> ready");
-    //                    }
 
                             // encolar de vuelta (si Feedback, al nivel 0; si no, a readyQueue)
                         if (fbScheduler != null) {
@@ -295,6 +282,7 @@ public class CPU {
 
             // 8) Comprobar si el proceso terminó
             if (currentProcess.getRemainingInstructions() <= 0) {
+                currentProcess.setCompletionTime(currentTime);
                 currentProcess.setStatus(Process.Status.TERMINATED);
                 runningQueue.remove(currentProcess);
                 readyQueue.remove(currentProcess);
@@ -315,12 +303,7 @@ public class CPU {
             if (scheduler instanceof SRT) {
                 Process shortest = ((SRT) scheduler).peekNextProcess(readyQueue);
                 if (shortest != null && shortest.getRemainingInstructions() < currentProcess.getRemainingInstructions()) {
-    //                System.out.println("[Scheduler SRT] Preempción: proceso " + currentProcess.getPid() + " reencolado por " + shortest.getPid());
-    //                addProcess(currentProcess); // reencolamos
-    //                currentProcess.setStatus(Process.Status.READY);
-    //                currentProcess = null;
-    //                rrQuantumCounter = 0;
-    //                continue;
+
                     System.out.println("[Scheduler SRT] Preempción: proceso " + currentProcess.getPid() +
                                        " reencolado por " + shortest.getPid());
 
@@ -386,7 +369,7 @@ public class CPU {
 
         } // fin while principal
 
-        //System.out.println("[CPU] Simulación finalizada. Todos los procesos terminados o en estado bloqueado sin avanzar.");
+  
 }
     
     private void ejecutarSO(int ciclos) {

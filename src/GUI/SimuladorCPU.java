@@ -45,6 +45,10 @@ public class SimuladorCPU extends javax.swing.JFrame {
     
     private JTabbedPane tabbedPane;
     private RendimientoCPU panelUtilizacionCPU;
+    private TiempoEsperaChart panelTiempoEspera;
+    
+    private int ciclosOcupados = 0;
+    private int ultimoTiempo = 0;
   
     
 
@@ -119,6 +123,7 @@ public class SimuladorCPU extends javax.swing.JFrame {
     private void configurarTodasLasGraficas() {
     configurarGraficaUtilizacion();
     configurarGraficaThroughput();
+    configurarGraficaTiempoEspera();
 }
     
     private void configurarGraficaThroughput() {
@@ -128,6 +133,14 @@ public class SimuladorCPU extends javax.swing.JFrame {
     jPanel5.revalidate();
     jPanel5.repaint();
 }
+    private void configurarGraficaTiempoEspera() {
+    panelTiempoEspera = new TiempoEsperaChart();
+    jPanel6.setLayout(new BorderLayout());  // jPanel6 es Tiempo de respuesta
+    jPanel6.add(panelTiempoEspera, BorderLayout.CENTER);
+    jPanel6.revalidate();
+    jPanel6.repaint();
+}
+    
     
         public static LinkedList<Process> generarProcesosAleatorios(int cantidad) {
             LinkedList<Process> procesos = new LinkedList<>();
@@ -188,6 +201,27 @@ public class SimuladorCPU extends javax.swing.JFrame {
 
             System.out.println("Planificador cambiado a: " + nuevoScheduler.getClass().getSimpleName());
         }
+        
+        private double calcularTiempoEsperaPromedio() {
+    LinkedList<Process> todosProcesos = cpu.obtenerTodosLosProcesos();
+    int totalProcesos = 0;
+    int sumaTiemposEspera = 0;
+    
+    for (int i = 0; i < todosProcesos.getLenght(); i++) {
+        Process p = todosProcesos.getElementIn(i);
+        if (p.getStatus() == Process.Status.TERMINATED && p.getCompletionTime() != -1) {
+            // USAR completionTime en lugar de tiempo actual
+            int tiempoEnSistema = p.getCompletionTime() - p.getArrivalTime();
+            int tiempoServicio = p.getTotalInstructions();
+            int tiempoEspera = tiempoEnSistema - tiempoServicio;
+            
+            sumaTiemposEspera += Math.max(0, tiempoEspera);
+            totalProcesos++;
+        }
+    }
+    
+    return totalProcesos > 0 ? (double) sumaTiemposEspera / totalProcesos : 0.0;
+}
 
         private void iniciarReloj() {
             if (corriendo) return;
@@ -249,8 +283,18 @@ public class SimuladorCPU extends javax.swing.JFrame {
                     LinkedList<Process> listaProcesos = cpu.obtenerTodosLosProcesos();
                     SwingUtilities.invokeLater(() -> actualizarPaneles(listaProcesos));
 if (panelUtilizacionCPU != null) {
-    double utilizacionInstantanea = (cpu.getCurrentProcess() != null || cpu.isSoEjecutando()) ? 100.0 : 0.0;
-    panelUtilizacionCPU.actualizarGrafico(tiempo, utilizacionInstantanea);
+    long tiempoCPU = cpu.getCurrentTime();
+    long ciclosOcupadosCPU = cpu.getBusyCycles();
+    
+    double utilizacion = (tiempoCPU > 0) ? 
+        ((double) ciclosOcupadosCPU / tiempoCPU) * 100.0 : 0.0;
+    
+    System.out.println("tiempo CPU" + tiempoCPU);
+    System.out.println("ciclosOcupados" + ciclosOcupadosCPU);
+    
+    
+    utilizacion = Math.min(utilizacion, 100.0);
+    panelUtilizacionCPU.actualizarGrafico((int) tiempoCPU, utilizacion);
 }
 
 if (panelThroughput != null) {
@@ -263,8 +307,15 @@ if (panelThroughput != null) {
             procesosCompletados++;
         }
     }
-    panelThroughput.actualizarGrafico(tiempo, procesosCompletados);
+    panelThroughput.actualizarGrafico((int)cpu.getCurrentTime(), procesosCompletados);
 }
+
+
+if (panelTiempoEspera != null) {
+    double tiempoEsperaPromedio = calcularTiempoEsperaPromedio();
+    panelTiempoEspera.actualizarGrafico((int)cpu.getCurrentTime(), tiempoEsperaPromedio);
+}
+
 
                     try {
                         Thread.sleep(200);
@@ -460,8 +511,6 @@ if (panelThroughput != null) {
         jPanel4 = new javax.swing.JPanel();
         jPanel5 = new javax.swing.JPanel();
         jPanel6 = new javax.swing.JPanel();
-        jPanel7 = new javax.swing.JPanel();
-        jPanel3 = new javax.swing.JPanel();
         jMenuBar1 = new javax.swing.JMenuBar();
         jMenu1 = new javax.swing.JMenu();
         jMenuItem2 = new javax.swing.JMenuItem();
@@ -744,19 +793,6 @@ if (panelThroughput != null) {
 
         jTabbedPane2.addTab(" Tiempo de respuesta ", jPanel6);
 
-        javax.swing.GroupLayout jPanel7Layout = new javax.swing.GroupLayout(jPanel7);
-        jPanel7.setLayout(jPanel7Layout);
-        jPanel7Layout.setHorizontalGroup(
-            jPanel7Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 0, Short.MAX_VALUE)
-        );
-        jPanel7Layout.setVerticalGroup(
-            jPanel7Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 0, Short.MAX_VALUE)
-        );
-
-        jTabbedPane2.addTab("Equidad ", jPanel7);
-
         javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
         jPanel2.setLayout(jPanel2Layout);
         jPanel2Layout.setHorizontalGroup(
@@ -773,19 +809,6 @@ if (panelThroughput != null) {
         );
 
         jTabbedPane1.addTab("Graficas", jPanel2);
-
-        javax.swing.GroupLayout jPanel3Layout = new javax.swing.GroupLayout(jPanel3);
-        jPanel3.setLayout(jPanel3Layout);
-        jPanel3Layout.setHorizontalGroup(
-            jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 1380, Short.MAX_VALUE)
-        );
-        jPanel3Layout.setVerticalGroup(
-            jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 800, Short.MAX_VALUE)
-        );
-
-        jTabbedPane1.addTab("Estadisticas", jPanel3);
 
         getContentPane().add(jTabbedPane1, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, -1, -1));
         jTabbedPane1.getAccessibleContext().setAccessibleName("Simulador");
@@ -1014,11 +1037,9 @@ if (panelThroughput != null) {
     private javax.swing.JMenuItem jMenuItem3;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
-    private javax.swing.JPanel jPanel3;
     private javax.swing.JPanel jPanel4;
     private javax.swing.JPanel jPanel5;
     private javax.swing.JPanel jPanel6;
-    private javax.swing.JPanel jPanel7;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane3;
     private javax.swing.JScrollPane jScrollPane4;

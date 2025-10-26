@@ -28,6 +28,7 @@ public class Process implements Runnable {
     private int exceptionServiceCycles;
     private int priority;
     private int currentLevel = 0; // Por defecto 0 (no afecta otros algoritmos) //////////////////////
+    private int completionTime = -1;
 
     public enum Status {
         NEW, READY, RUNNING, BLOCKED, SUSPENDED, TERMINATED, SUSPEND_READY, SUSPEND_BLOCKED
@@ -116,6 +117,14 @@ public class Process implements Runnable {
     
     public void decrementRemainingInstructions(){
         remainingInstructions--;
+    }
+    
+    public void setCompletionTime(int time) {
+        this.completionTime = time;
+    }
+    
+    public int getCompletionTime() {
+        return completionTime;
     }
 
 

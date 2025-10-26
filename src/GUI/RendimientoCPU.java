@@ -23,29 +23,19 @@ public class RendimientoCPU extends JPanel {
     }
 
     private void crearGrafico() {
-     
-        
-        dataset = new DefaultCategoryDataset();
-        
-        // Datos de prueba para ver si se muestra
-        dataset.addValue(0, "CPU", "Inicio");
-        dataset.addValue(50, "CPU", "Prueba");
-        dataset.addValue(100, "CPU", "Test");
-        
-        JFreeChart chart = ChartFactory.createLineChart(
-            "Utilización del CPU",
-            "Ciclos",
-            "Porcentaje Ocupado", 
-            dataset
-        );
+    dataset = new DefaultCategoryDataset();
+    
+    JFreeChart chart = ChartFactory.createLineChart(
+        "Utilización del CPU (Acumulada)",  // ← CAMBIAR TÍTULO
+        "Ciclos", 
+        "Porcentaje Ocupado",
+        dataset
+    );
 
-        chartPanel = new ChartPanel(chart);
-        chartPanel.setPreferredSize(new java.awt.Dimension(600, 400));
-        
-        add(chartPanel, BorderLayout.CENTER);
-        
-        
-    }
+    ChartPanel chartPanel = new ChartPanel(chart);
+    chartPanel.setPreferredSize(new java.awt.Dimension(600, 400));
+    add(chartPanel, BorderLayout.CENTER);
+}
 
     public void actualizarGrafico(int ciclo, double porcentaje) {
         if (dataset != null) {
