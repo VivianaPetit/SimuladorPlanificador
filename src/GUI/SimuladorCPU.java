@@ -23,6 +23,7 @@ import java.util.Random;
 import javax.swing.*;
 import java.util.Timer;
 import java.util.TimerTask;
+
 /**
  *
  * @author vivia
@@ -38,6 +39,8 @@ public class SimuladorCPU extends javax.swing.JFrame {
     private Thread cpuThread;
     private Thread uiThread;
     private ButtonGroup grupoPoliticas;
+    private RendimientoCPU graficoFrame;
+  
     
 
     public SimuladorCPU() {
@@ -204,13 +207,19 @@ public class SimuladorCPU extends javax.swing.JFrame {
                 }
             });
             cpuThread.start();
+            
+            
 
             // Hilo de actualización de interfaz
             uiThread = new Thread(() -> {
                 while (simulacionActiva) {
                     LinkedList<Process> listaProcesos = cpu.obtenerTodosLosProcesos();
                     SwingUtilities.invokeLater(() -> actualizarPaneles(listaProcesos));
-
+if (graficoFrame != null && graficoFrame.isVisible()) {
+    // Utilización instantánea: 100% si hay proceso, 0% si no
+    double utilizacionInstantanea = (cpu.getCurrentProcess() != null || cpu.isSoEjecutando()) ? 100.0 : 0.0;
+    graficoFrame.actualizarGrafico(tiempo, utilizacionInstantanea);
+}
                     try {
                         Thread.sleep(200);
                     } catch (InterruptedException e) {
@@ -413,6 +422,8 @@ public class SimuladorCPU extends javax.swing.JFrame {
         Feedback = new javax.swing.JRadioButtonMenuItem();
         RR = new javax.swing.JRadioButtonMenuItem();
         ms = new javax.swing.JMenuItem();
+        jMenu3 = new javax.swing.JMenu();
+        jMenuItem4 = new javax.swing.JMenuItem();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("Simulador de Planificador de Procesos");
@@ -480,11 +491,11 @@ public class SimuladorCPU extends javax.swing.JFrame {
         colaBloqueado.setLayout(colaBloqueadoLayout);
         colaBloqueadoLayout.setHorizontalGroup(
             colaBloqueadoLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 863, Short.MAX_VALUE)
+            .addGap(0, 899, Short.MAX_VALUE)
         );
         colaBloqueadoLayout.setVerticalGroup(
             colaBloqueadoLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 524, Short.MAX_VALUE)
+            .addGap(0, 587, Short.MAX_VALUE)
         );
 
         jScrollPane1.setViewportView(colaBloqueado);
@@ -738,6 +749,18 @@ public class SimuladorCPU extends javax.swing.JFrame {
 
         jMenuBar1.add(jMenu2);
 
+        jMenu3.setText("Grafico");
+
+        jMenuItem4.setText("Mostrar Grafico de Rendimiento");
+        jMenuItem4.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem4ActionPerformed(evt);
+            }
+        });
+        jMenu3.add(jMenuItem4);
+
+        jMenuBar1.add(jMenu3);
+
         setJMenuBar(jMenuBar1);
 
         pack();
@@ -793,6 +816,13 @@ public class SimuladorCPU extends javax.swing.JFrame {
         v3.setVisible(true);
         
     }//GEN-LAST:event_msMousePressed
+
+    private void jMenuItem4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem4ActionPerformed
+    if (graficoFrame == null || !graficoFrame.isVisible()) {
+        graficoFrame = new RendimientoCPU();
+        graficoFrame.setVisible(true);
+    }  
+    }//GEN-LAST:event_jMenuItem4ActionPerformed
 
     /**
      * @param args the command line arguments
@@ -858,10 +888,12 @@ public class SimuladorCPU extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel9;
     private javax.swing.JMenu jMenu1;
     private javax.swing.JMenu jMenu2;
+    private javax.swing.JMenu jMenu3;
     private javax.swing.JMenuBar jMenuBar1;
     private javax.swing.JMenuItem jMenuItem1;
     private javax.swing.JMenuItem jMenuItem2;
     private javax.swing.JMenuItem jMenuItem3;
+    private javax.swing.JMenuItem jMenuItem4;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane3;

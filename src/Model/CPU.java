@@ -40,8 +40,8 @@ public class CPU {
     private Queue runningQueue;
     private Queue finishedQueue;
     Semaphore ioSemaphore = new Semaphore(1); // solo un dispositivo de E/S disponible
-    private Process procesoActual; // nuevo
     private Process currentProcess;  
+    private Process procesoActual;  
 
     private static final int PROCESS_SWITCH_COST = 2;  // cambio de proceso
     private static final int IO_INTERRUPT_COST = 2;     // atención de interrupción E/S
@@ -53,6 +53,8 @@ public class CPU {
     private boolean soEjecutando;
     private String status;
     private String tipo;
+    
+    private LinkedList<Double> historialUtilidad = new LinkedList<>();
 
     
 
@@ -242,6 +244,7 @@ public class CPU {
             totalCycles++;
             busyCycles++;
             currentTime++;
+            actualizarRendimiento();
 
             // Actualizar campos del proceso (CPU hace pc++, mar++, remainingInstructions--)
             try {
@@ -635,7 +638,20 @@ public class CPU {
    public Process getCurrentProcess() {
        return currentProcess;
    }
-
    
+   public double getUtilizacion() {
+    if (totalCycles == 0) return 0;
+    return ((double) busyCycles / totalCycles) * 100.0;
+}
+   
+   private void actualizarRendimiento() {
+    double utilidadActual = getUtilizacion();
+    historialUtilidad.insertFinal(utilidadActual);
+}
+   
+   public LinkedList<Double> getHistorialUtilidad() {
+    return historialUtilidad;
+}
+     
   
 }
