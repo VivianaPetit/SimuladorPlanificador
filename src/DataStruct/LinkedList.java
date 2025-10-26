@@ -190,6 +190,27 @@ public class LinkedList<E> {
         return sortedList;
     }
     
+    /**
+    * Reemplaza el elemento en la posición especificada
+    * @param index posición del elemento a reemplazar (0-based)
+    * @param element nuevo elemento a colocar en esa posición
+    * @return true si se pudo reemplazar, false si el índice es inválido
+    */
+    public boolean setElementIn(int index, E element) {
+        if (index < 0 || index >= length) {
+            System.out.println("La posición debe estar entre 0 y " + (length - 1));
+            return false;
+        }
+
+        Nodo<E> actual = first;
+        for (int i = 0; i < index; i++) {
+            actual = actual.getNext();
+        }
+
+        actual.setElement(element);
+        return true;
+    }
+    
 
     /**
      * Obtener el primer nodo.
@@ -244,4 +265,6 @@ public class LinkedList<E> {
     public void setLenght(int length) {
         this.length = length;
     }
+    
+    
 }

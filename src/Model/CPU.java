@@ -19,12 +19,15 @@ import Scheduler.SRT;
 import Scheduler.HRRN;
 import Scheduler.Feedback;
 import Scheduler.SPN;
+import java.util.function.Consumer;
 
 public class CPU {
     private Scheduler scheduler;
     public static int cycleDurationMs = 1000; // duración de cada ciclo (simulada) por default: 500
-    private int currentTime = 0;
-    private Feedback fbScheduler; 
+    public static int currentTime = 0;
+    private Feedback fbScheduler;
+    
+    private Consumer<String> logListener;
     
     // Métricas básicas
     private int totalCycles = 0;
@@ -78,257 +81,285 @@ public class CPU {
          * Controla la planificación, interrupciones, E/S y ejecución de instrucciones.
         */
         public void ejecutar() {
-    int rrQuantumCounter = 0;
-    int feedbackQuantumCounter = 0;
+            int rrQuantumCounter = 0;
+            int feedbackQuantumCounter = 0;
 
-    if (scheduler instanceof Feedback) {
-        fbScheduler = (Feedback) scheduler;
-    }
-
-    logCPU("Iniciando simulacion...");
-
-    while (true) {
-        executeRequestedSOIfAny();
-
-        // 1) Llegada de procesos nuevos
-        if (!processQueue.isEmpty()) {
-            Queue tempQueue = new Queue();
-            while (!processQueue.isEmpty()) {
-                Process p = (Process) processQueue.dispatch();
-                if (p.getArrivalTime() <= currentTime && p.getStatus() == Process.Status.NEW) {
-                    if (fbScheduler != null) fbScheduler.addNewProcess(p);
-                    else addProcessToReadyQueue(p);
-                    synchronized (arrivalLock) { arrivalLock.notifyAll(); }
-                    logSO("→ Proceso " + p.getPid() + " llegó al sistema (READY)");
-                } else {
-                    tempQueue.enqueue(p);
-                }
+            if (scheduler instanceof Feedback) {
+                fbScheduler = (Feedback) scheduler;
             }
-            processQueue = tempQueue;
-        }
 
-        // 2) Intentar reanudar suspendidos si hay memoria
-        if (!suspendedReadyQueue.isEmpty()) {
-            Queue tempSR = new Queue();
-            while (!suspendedReadyQueue.isEmpty()) {
-                Process p = (Process) suspendedReadyQueue.dispatch();
-                if (usedMemory + p.getMemoryNeeded() <= totalMemory) {
-                    resumeProcess(p);
-                    logSO("Proceso " + p.getPid() + " reanudado (SUSPENDED_READY → READY)");
-                } else {
-                    tempSR.enqueue(p);
+            logCPU("Iniciando simulacion...");
+
+            while (true) {
+                // Ejecutar SO si hay alguna petición pendiente
+                executeRequestedSOIfAny();
+
+                // 1) Llegada de procesos
+                if (!processQueue.isEmpty()) {
+                    Queue tempQueue = new Queue();
+                    while (!processQueue.isEmpty()) {
+                        Process p = (Process) processQueue.dispatch();
+                        if (p.getArrivalTime() <= currentTime && p.getStatus() == Process.Status.NEW) {
+                            if (fbScheduler != null) {
+                                fbScheduler.addNewProcess(p);
+                            } else {
+                                addProcessToReadyQueue(p);
+                            }
+                            synchronized (arrivalLock) { arrivalLock.notifyAll(); }
+                        } else {
+                            tempQueue.enqueue(p);
+                        }
+                    }
+                    processQueue = tempQueue;
                 }
-            }
-            suspendedReadyQueue = tempSR;
-        }
 
-        // 3) Mover suspendidos bloqueados a suspendidos listos si ya terminaron E/S
-        if (!suspendedBlockedQueue.isEmpty()) {
-            Queue tempSB = new Queue();
-            while (!suspendedBlockedQueue.isEmpty()) {
-                Process p = (Process) suspendedBlockedQueue.dispatch();
-                if (p.getStatus() == Process.Status.SUSPENDED_BLOCKED && p.getExceptionServiceCycles() <= 0) {
-                    p.setStatus(Process.Status.SUSPENDED_READY);
-                    suspendedReadyQueue.enqueue(p);
-                    logSO("Proceso " + p.getPid() + " pasó de SUSPENDED_BLOCKED a SUSPENDED_READY");
-                } else {
-                    tempSB.enqueue(p);
+                // 2) Selección del siguiente proceso a ejecutar
+                if (currentProcess == null) {
+                    if (scheduler instanceof HRRN) {
+                        ((HRRN) scheduler).updateTime(currentTime);
+                    }
+
+                    if (fbScheduler != null) {
+                        currentProcess = fbScheduler.getNextProcess();
+                        procesoActual = currentProcess;
+                        feedbackQuantumCounter = 0;
+                        if (currentProcess != null) {
+                            currentProcess.setStatus(Process.Status.RUNNING);
+                            runningQueue.enqueue(currentProcess);
+                            logCPU("Despachando (Feedback) proceso " + currentProcess.getPid());
+
+                            // Cambio de proceso: solicitar SO
+                            requestSO("cambio de proceso");
+                            executeRequestedSOIfAny();
+                        }
+                    } else {
+                        currentProcess = scheduler.nextProcess(readyQueue);
+                        procesoActual = currentProcess;
+                        rrQuantumCounter = 0;
+                        if (currentProcess != null) {
+                            currentProcess.setStatus(Process.Status.RUNNING);
+                            runningQueue.enqueue(currentProcess);
+                            logCPU("Despachando proceso " + currentProcess.getPid());
+
+                            // Cambio de proceso: solicitar SO
+                            requestSO("cambio de proceso");
+                            executeRequestedSOIfAny();
+                        }
+                    }
                 }
-            }
-            suspendedBlockedQueue = tempSB;
-        }
 
-        // 4) Selección del siguiente proceso
-        if (currentProcess == null) {
-            if (scheduler instanceof HRRN) ((HRRN) scheduler).updateTime(currentTime);
+                // 3) CPU ociosa
+                if (currentProcess == null) {
+                    try { Thread.sleep(cycleDurationMs); } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                    currentTime++;
+                    totalCycles++;
+                    continue;
+                }
 
-            if (fbScheduler != null) {
-                currentProcess = fbScheduler.getNextProcess();
-                procesoActual = currentProcess;
-                feedbackQuantumCounter = 0;
-                if (currentProcess != null) {
-                    currentProcess.setStatus(Process.Status.RUNNING);
-                    runningQueue.enqueue(currentProcess);
-                    logCPU("⚙ Ejecutando (Feedback) proceso " + currentProcess.getPid());
-                    requestSO("cambio de proceso");
+                // 4) Proceso genera una interrupción de E/S
+                if (!currentProcess.isCpuBound() && currentProcess.getCyclesToException() == 0) {
+                    logCPU("Proceso " + currentProcess.getPid() + " genera excepcion de E/S -> BLOQUEADO");
+
+                    // Verificar si el proceso está en memoria o suspendido
+                    if (currentProcess.isInMemory()) {
+                        currentProcess.setStatus(Process.Status.BLOCKED);
+                        blockedQueue.enqueue(currentProcess);
+                    } else {
+                        // Si no está en memoria, va directamente a suspendido-bloqueado
+                        currentProcess.setStatus(Process.Status.SUSPENDED_BLOCKED);
+                        suspendedBlockedQueue.enqueue(currentProcess);
+                    }
+
+                    runningQueue.remove(currentProcess);
+                    currentProcess = null;
+                    rrQuantumCounter = 0;
+                    feedbackQuantumCounter = 0;
+
+                    // Interrupción de solicitud de E/S: solicitar SO
+                    requestSO("interrupción de solicitud de E/S");
                     executeRequestedSOIfAny();
+
+                    // Solo procesar E/S si el proceso está en memoria (no suspendido)
+                    if (!suspendedBlockedQueue.isEmpty() || !blockedQueue.isEmpty()) {
+                        Process ioProc;
+                        if (!blockedQueue.isEmpty()) {
+                            ioProc = (Process) blockedQueue.dispatch();
+                            blockedQueueAux.enqueue(ioProc);
+                        } else {
+                            // Tomar de suspendido-bloqueado si no hay en bloqueado normal
+                            ioProc = (Process) suspendedBlockedQueue.dispatch();
+                            // No va a blockedQueueAux porque está suspendido
+                        }
+
+                        if (ioProc != null && ioProc.isInMemory()) {
+                            new Thread(() -> {
+                                try {
+                                    ioSemaphore.acquire();
+                                    logIO("Atendiendo E/S de proceso " + ioProc.getPid() +
+                                          " (servicio " + ioProc.getExceptionServiceCycles() + " ciclos)");
+
+                                    Thread.sleep(ioProc.getExceptionServiceCycles() * cycleDurationMs + 50);
+
+                                    // Actualizar estado según si está en memoria o suspendido
+                                    if (ioProc.isInMemory()) {
+                                        ioProc.setStatus(Process.Status.READY);
+
+                                        if (fbScheduler != null) {
+                                            synchronized (fbScheduler) {
+                                                for (int i = 0; i < fbScheduler.getQueues().getLenght(); i++) {
+                                                    Queue q = fbScheduler.getQueues().getElementGeneric(i);
+                                                    if (q != null) q.remove(ioProc);
+                                                }
+                                                blockedQueueAux.remove(ioProc);
+                                                fbScheduler.addNewProcess(ioProc);
+                                            }
+                                            logIO("E/S completada: proceso " + ioProc.getPid() + " -> Feedback nivel 0");
+                                        } else {
+                                            synchronized (readyQueue) {
+                                                readyQueue.enqueue(ioProc);
+                                                blockedQueueAux.remove(ioProc);
+                                            }
+                                            logIO("E/S completada: proceso " + ioProc.getPid() + " -> ready");
+                                        }
+                                    } else {
+                                        // Proceso suspendido: pasa de SUSPENDED_BLOCKED a SUSPENDED_READY
+                                        ioProc.setStatus(Process.Status.SUSPENDED_READY);
+                                        suspendedReadyQueue.enqueue(ioProc);
+                                        logIO("E/S completada: proceso " + ioProc.getPid() + " suspendido -> SUSPENDED_READY");
+                                    }
+
+                                    ioProc.setCyclesToException(-1);
+
+                                    // Interrupción de finalización de E/S: solicitar SO (NO ejecutarlo aquí)
+                                    requestSO("interrupcion de finalización E/S");
+
+                                    synchronized (arrivalLock) { arrivalLock.notifyAll(); }
+                                } catch (InterruptedException e) {
+                                    Thread.currentThread().interrupt();
+                                } finally {
+                                    ioSemaphore.release();
+                                }
+                            }).start();
+                        }
+                    }
+
+                    continue;
                 }
-            } else {
-                currentProcess = scheduler.nextProcess(readyQueue);
-                procesoActual = currentProcess;
-                rrQuantumCounter = 0;
-                if (currentProcess != null) {
-                    currentProcess.setStatus(Process.Status.RUNNING);
-                    runningQueue.enqueue(currentProcess);
-                    logCPU("⚙ Ejecutando proceso " + currentProcess.getPid());
-                    requestSO("cambio de proceso");
-                    executeRequestedSOIfAny();
-                }
-            }
-        }
 
-        // 5) CPU ociosa
-        if (currentProcess == null) {
-            try { Thread.sleep(cycleDurationMs); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
-            currentTime++;
-            totalCycles++;
-            continue;
-        }
-
-        // 6) Interrupción de E/S
-        if (!currentProcess.isCpuBound() && currentProcess.getCyclesToException() == 0) {
-            logCPU("⚡ Proceso " + currentProcess.getPid() + " genera excepción de E/S → BLOQUEADO");
-            currentProcess.setStatus(Process.Status.BLOCKED);
-            blockedQueue.enqueue(currentProcess);
-            runningQueue.remove(currentProcess);
-            currentProcess = null;
-            rrQuantumCounter = 0;
-            feedbackQuantumCounter = 0;
-            requestSO("interrupción de solicitud de E/S");
-            executeRequestedSOIfAny();
-
-            final Process ioProc = (Process) blockedQueue.dispatch();
-            blockedQueueAux.enqueue(ioProc);
-
-            new Thread(() -> {
+                // 5) Ejecutar instrucción normal
                 try {
-                    ioSemaphore.acquire();
-                    logIO("⏳ Atendiendo E/S de proceso " + ioProc.getPid() +
-                          " (" + ioProc.getExceptionServiceCycles() + " ciclos)");
-
-                    Thread.sleep(ioProc.getExceptionServiceCycles() * cycleDurationMs + 50);
-
-                    // Verificamos el estado del proceso antes de decidir a dónde pasa
-                    Process.Status st = ioProc.getStatus();
-                    logIO("🧭 E/S terminada para proceso " + ioProc.getPid() + " (estado actual: " + st + ")");
-
-                    if (st == Process.Status.SUSPENDED_BLOCKED) {
-                        ioProc.setStatus(Process.Status.SUSPENDED_READY);
-                        suspendedReadyQueue.enqueue(ioProc);
-                        logSO("📦 Proceso " + ioProc.getPid() + " pasó de SUSPENDED_BLOCKED → SUSPENDED_READY");
-                    } 
-                    else if (st == Process.Status.BLOCKED) {
-                        ioProc.setStatus(Process.Status.READY);
-                        readyQueue.enqueue(ioProc);
-                        logIO("📤 E/S completada: proceso " + ioProc.getPid() + " → READY");
-                    }
-
-                    // Intentar reanudar si hay memoria
-                    if (ioProc.getStatus() == Process.Status.SUSPENDED_READY &&
-                        usedMemory + ioProc.getMemoryNeeded() <= totalMemory) {
-                        resumeProcess(ioProc);
-                        logSO("↻ Proceso " + ioProc.getPid() + " reanudado automáticamente (READY)");
-                    }
-
-                    blockedQueueAux.remove(ioProc);
-                    requestSO("interrupción de finalización E/S");
-                    synchronized (arrivalLock) { arrivalLock.notifyAll(); }
-
+                    Thread.sleep(cycleDurationMs);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
-                } finally {
-                    ioSemaphore.release();
                 }
-            }).start();
 
-            continue;
-        }
+                totalCycles++;
+                busyCycles++;
+                currentTime++;
 
-        // 7) Ejecutar instrucción normal
-        try { Thread.sleep(cycleDurationMs); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
-        totalCycles++;
-        busyCycles++;
-        currentTime++;
+                try { currentProcess.incrementPC(); } catch (Exception ignored) {}
+                try { currentProcess.incrementMAR(); } catch (Exception ignored) {}
+                try {
+                    currentProcess.decrementRemainingInstructions();
+                    logProc("[" + currentProcess.getPid() + "] Ejecutando instruccion " +
+                            (currentProcess.getTotalInstructions() - currentProcess.getRemainingInstructions()) +
+                            " | PC=" + currentProcess.getPc() + " | MAR=" + currentProcess.getMar());
+                } catch (Exception ignored) {}
 
-        try { currentProcess.incrementPC(); } catch (Exception ignored) {}
-        try { currentProcess.incrementMAR(); } catch (Exception ignored) {}
-        try {
-            currentProcess.decrementRemainingInstructions();
-            logProc("[" + currentProcess.getPid() + "] ejecutando instrucción " +
-                    (currentProcess.getTotalInstructions() - currentProcess.getRemainingInstructions()) +
-                    " | PC=" + currentProcess.getPc() + " | MAR=" + currentProcess.getMar());
-        } catch (Exception ignored) {}
+                if (currentProcess.getCyclesToException() > 0) {
+                    currentProcess.setCyclesToException(currentProcess.getCyclesToException() - 1);
+                }
 
-        if (currentProcess.getCyclesToException() > 0) {
-            currentProcess.setCyclesToException(currentProcess.getCyclesToException() - 1);
-        }
+                synchronized (arrivalLock) {
+                    try { arrivalLock.wait(5); } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                }
 
-        synchronized (arrivalLock) {
-            try { arrivalLock.wait(5); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
-        }
-
-        executeRequestedSOIfAny();
-
-        // 8) Finalización del proceso
-        if (currentProcess.getRemainingInstructions() <= 0) {
-            currentProcess.setCompletionTime(currentTime);
-            currentProcess.setStatus(Process.Status.TERMINATED);
-            currentProcess.setInMemory(false);
-            runningQueue.remove(currentProcess);
-            readyQueue.remove(currentProcess);
-            blockedQueue.remove(currentProcess);
-            finishedQueue.enqueue(currentProcess);
-            logCPU("🏁 Proceso " + currentProcess.getPid() + " finalizado.");
-            currentProcess = null;
-            procesoActual = null;
-            rrQuantumCounter = 0;
-            feedbackQuantumCounter = 0;
-            continue;
-        }
-
-        // 9) Control de quantum y preempción
-        if (scheduler instanceof SRT) {
-            Process shortest = ((SRT) scheduler).peekNextProcess(readyQueue);
-            if (shortest != null && shortest.getRemainingInstructions() < currentProcess.getRemainingInstructions()) {
-                logSched("🔄 Preempción: proceso " + currentProcess.getPid() +
-                         " reencolado por " + shortest.getPid());
-                runningQueue.remove(currentProcess);
-                currentProcess.setStatus(Process.Status.READY);
-                addProcessToReadyQueue(currentProcess);
-                requestSO("cambio de proceso");
+                // Ejecutar SO si quedó alguna petición pendiente
                 executeRequestedSOIfAny();
-                currentProcess = null;
-                procesoActual = null;
-                rrQuantumCounter = 0;
-                continue;
+
+                // 6) Verificar si terminó el proceso
+                if (currentProcess.getRemainingInstructions() <= 0) {
+                    currentProcess.setCompletionTime(currentTime);
+                    currentProcess.setStatus(Process.Status.TERMINATED);
+                    currentProcess.setInMemory(false);
+                    runningQueue.remove(currentProcess);
+                    readyQueue.remove(currentProcess);
+                    blockedQueue.remove(currentProcess);
+                    finishedQueue.enqueue(currentProcess);
+                    logCPU("Proceso " + currentProcess.getPid() + " finalizado.");
+
+                    // intentar pasar un proceso de suspendido listo a memoria
+                    intentarReanudarProcesosSuspendidos();
+                            
+                    currentProcess = null;
+                    procesoActual = null;
+                    rrQuantumCounter = 0;
+                    feedbackQuantumCounter = 0;
+                    continue;
+                }
+
+                // 7) Control de quantum y preempción
+                if (scheduler instanceof SRT) {
+                    Process shortest = ((SRT) scheduler).peekNextProcess(readyQueue);
+                    if (shortest != null && shortest.getRemainingInstructions() < currentProcess.getRemainingInstructions()) {
+                        logSched("Preempcion: proceso " + currentProcess.getPid() +
+                                 " reencolado por " + shortest.getPid());
+                        runningQueue.remove(currentProcess);
+                        currentProcess.setStatus(Process.Status.READY);
+                        addProcessToReadyQueue(currentProcess);
+
+                        requestSO("cambio de proceso");
+                        executeRequestedSOIfAny();
+
+                        currentProcess = null;
+                        procesoActual = null;
+                        rrQuantumCounter = 0;
+                        continue;
+                    }
+                }
+
+                if (scheduler instanceof RR) {
+                    rrQuantumCounter++;
+                    int quantum = ((RR) scheduler).getQuantum();
+                    if (rrQuantumCounter >= quantum) {
+                        logSched("Quantum terminado, reencolando proceso " + currentProcess.getPid());
+                        addProcessToReadyQueue(currentProcess);
+                        runningQueue.remove(currentProcess);
+                        currentProcess.setStatus(Process.Status.READY);
+
+                        requestSO("cambio de proceso");
+                        executeRequestedSOIfAny();
+
+                        currentProcess = null;
+                        rrQuantumCounter = 0;
+                        continue;
+                    }
+                }
+
+                if (fbScheduler != null && currentProcess != null) {
+                    feedbackQuantumCounter++;
+                    int currentLevel = currentProcess.getCurrentLevel();
+                    int quantumActual = fbScheduler.getQuantums()[currentLevel];
+                    if (feedbackQuantumCounter >= quantumActual) {
+                        logSched("Quantum terminado para proceso " +
+                                 currentProcess.getPid() + " en nivel " + currentLevel);
+                        fbScheduler.requeueProcess(currentProcess, currentLevel);
+                        currentProcess.setStatus(Process.Status.READY);
+
+                        requestSO("cambio de proceso");
+                        executeRequestedSOIfAny();
+
+                        currentProcess = null;
+                        feedbackQuantumCounter = 0;
+                        continue;
+                    }
+                }
             }
         }
-
-        if (scheduler instanceof RR) {
-            rrQuantumCounter++;
-            int quantum = ((RR) scheduler).getQuantum();
-            if (rrQuantumCounter >= quantum) {
-                logSched("⏱ Quantum terminado, reencolando proceso " + currentProcess.getPid());
-                addProcessToReadyQueue(currentProcess);
-                runningQueue.remove(currentProcess);
-                currentProcess.setStatus(Process.Status.READY);
-                requestSO("cambio de proceso");
-                executeRequestedSOIfAny();
-                currentProcess = null;
-                rrQuantumCounter = 0;
-                continue;
-            }
-        }
-
-        if (fbScheduler != null && currentProcess != null) {
-            feedbackQuantumCounter++;
-            int currentLevel = currentProcess.getCurrentLevel();
-            int quantumActual = fbScheduler.getQuantums()[currentLevel];
-            if (feedbackQuantumCounter >= quantumActual) {
-                logSched("⏱ Quantum terminado para proceso " +
-                         currentProcess.getPid() + " en nivel " + currentLevel);
-                fbScheduler.requeueProcess(currentProcess, currentLevel);
-                currentProcess.setStatus(Process.Status.READY);
-                requestSO("cambio de proceso");
-                executeRequestedSOIfAny();
-                currentProcess = null;
-                feedbackQuantumCounter = 0;
-                continue;
-            }
-        }
-    }
-}
-
 
         
         // Método para pedir ejecución del SO (llamado desde IO handler u otras partes)
@@ -393,87 +424,8 @@ public class CPU {
 
             logSO("Memoria usada ahora: " + usedMemory + "/" + totalMemory);
         }
-
-        private void resumeProcess(Process p) {
-            if (p == null) return;
-
-            if (usedMemory + p.getMemoryNeeded() > totalMemory) {
-                logSO("No hay suficiente memoria para reanudar el proceso " + p.getPid());
-                return;
-            }
-
-            boolean fromReady = false;
-            boolean fromBlocked = false;
-
-            if (suspendedReadyQueue.contains(p)) {
-                suspendedReadyQueue.remove(p);
-                fromReady = true;
-            } else if (suspendedBlockedQueue.contains(p)) {
-                suspendedBlockedQueue.remove(p);
-                fromBlocked = true;
-            } else {
-                logSO("Proceso " + p.getPid() + " no está en ninguna cola suspendida.");
-                return;
-            }
-
-            usedMemory += p.getMemoryNeeded();
-
-            if (fromReady) {
-                p.setStatus(Process.Status.READY);
-                readyQueue.enqueue(p);
-                logSO("Proceso " + p.getPid() + " reanudado desde suspendido-listo.");
-            } else if (fromBlocked) {
-                p.setStatus(Process.Status.BLOCKED);
-                blockedQueueAux.enqueue(p);
-                logSO("Proceso " + p.getPid() + " reanudado desde suspendido-bloqueado.");
-            }
-
-            logSO("Memoria usada ahora: " + usedMemory + "/" + totalMemory);
-        }
-
-        private void ejecutarSO(String motivo) {
-            int ciclos = 2;
-            soEjecutando = true;
-
-            pc = 0;
-            mar = 0;
-
-            for (int i = 0; i < ciclos; i++) {
-                try {
-                    Thread.sleep(cycleDurationMs);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
-
-                pc++;
-                mar++;
-                totalCycles++;
-                busyCycles++;
-                currentTime++;
-
-                logSO("Ejecutando ciclo " + (i + 1) + "/" + ciclos + " para " + motivo);
-            }
-
-            soEjecutando = false;
-        }
-
-        private boolean hasAnyReadyProcess(Feedback fb) {
-            for (int i = 0; i < fb.getQueues().getLenght(); i++) {
-                Queue q = fb.getQueues().getElementGeneric(i);
-                if (q != null && !q.isEmpty()) return true;
-            }
-            return false;
-        }
-
-        private int findProcessLevel(Feedback fb, Process p) {
-            for (int i = 0; i < fb.getQueues().getLenght(); i++) {
-                Queue q = fb.getQueues().getElementGeneric(i);
-                if (q.contains(p)) return i;
-            }
-            return 0;
-        }
-
-        public void addProcessToReadyQueue(Process process) {
+        
+                public void addProcessToReadyQueue(Process process) {
             calcularMemoriaOcupada();
 
             if (usedMemory + process.getMemoryNeeded() <= totalMemory) {
@@ -549,6 +501,143 @@ public class CPU {
             }
 
             return candidate;
+        }
+
+        private void gestionarReanudacionProcesos() {
+            if (suspendedReadyQueue.isEmpty()) {
+                return;
+            }
+
+            if (usedMemory >= totalMemory) {
+                return;
+            }
+
+            boolean seReanudoAlguno = false;
+            int procesosReanudados = 0;
+
+            // Obtener lista ordenada por prioridad (procesos con mayor prioridad primero)
+            LinkedList<Process> procesosOrdenados = obtenerProcesosSuspendidosPorPrioridad();
+            Queue tempNoReanudados = new Queue();
+
+            // Intentar reanudar procesos por orden de prioridad
+            for (int i = 0; i < procesosOrdenados.getLenght() && usedMemory < totalMemory; i++) {
+                Process p = procesosOrdenados.getElementGeneric(i);
+
+                if (usedMemory + p.getMemoryNeeded() <= totalMemory) {
+                    // Reanudar proceso
+                    usedMemory += p.getMemoryNeeded();
+                    p.setInMemory(true);
+                    p.setStatus(Process.Status.READY);
+                    
+                    if (fbScheduler != null) {
+                        fbScheduler.addNewProcess(p);
+                    } else {
+                        addProcessToReadyQueue(p);
+                    }
+
+                    procesosReanudados++;
+                    seReanudoAlguno = true;
+                    logSO("Proceso " + p.getPid() + " (Prioridad: " + p.getPriority() + 
+                          ") reanudado automáticamente.");
+
+                    // Remover de suspendedReadyQueue
+                    suspendedReadyQueue.remove(p);
+                } else {
+                    // Mantener en cola temporal para no perderlo
+                    tempNoReanudados.enqueue(p);
+                }
+            }
+
+            // Los procesos que no cupieron se mantienen suspendidos
+            // (ya están en suspendedReadyQueue)
+
+            if (seReanudoAlguno) {
+                logSO(procesosReanudados + " proceso(s) reanudado(s). Memoria: " + 
+                      usedMemory + "/" + totalMemory + " MB");
+                calcularMemoriaOcupada();
+            }
+        }
+
+        private LinkedList<Process> obtenerProcesosSuspendidosPorPrioridad() {
+            LinkedList<Process> lista = new LinkedList<>();
+
+            // Copiar todos los procesos suspendidos a una lista
+            Queue temp = new Queue();
+            while (!suspendedReadyQueue.isEmpty()) {
+                Process p = (Process) suspendedReadyQueue.dispatch();
+                lista.insertFinal(p);
+                temp.enqueue(p);
+            }
+
+            // Restaurar la cola original
+            while (!temp.isEmpty()) {
+                suspendedReadyQueue.enqueue(temp.dispatch());
+            }
+
+            // Ordenar por prioridad descendente (mayor prioridad primero)
+            for (int i = 0; i < lista.getLenght() - 1; i++) {
+                for (int j = i + 1; j < lista.getLenght(); j++) {
+                    Process p1 = lista.getElementGeneric(i);
+                    Process p2 = lista.getElementGeneric(j);
+
+                    if (p2.getPriority() > p1.getPriority()) {
+                        // Intercambiar posiciones
+                        lista.setElementIn(i, p2);
+                        lista.setElementIn(j, p1);
+                    }
+                }
+            }
+
+            return lista;
+        }
+        
+        private void intentarReanudarProcesosSuspendidos() {
+            // Solo intentar reanudar si hay memoria disponible
+            if (usedMemory < totalMemory && !suspendedReadyQueue.isEmpty()) {
+                gestionarReanudacionProcesos();
+            }
+        }
+
+        private void ejecutarSO(String motivo) {
+            int ciclos = 2;
+            soEjecutando = true;
+
+            pc = 0;
+            mar = 0;
+
+            for (int i = 0; i < ciclos; i++) {
+                try {
+                    Thread.sleep(cycleDurationMs);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+
+                pc++;
+                mar++;
+                totalCycles++;
+                busyCycles++;
+                currentTime++;
+
+                logSO("Ejecutando ciclo " + (i + 1) + "/" + ciclos + " para " + motivo);
+            }
+
+            soEjecutando = false;
+        }
+
+        private boolean hasAnyReadyProcess(Feedback fb) {
+            for (int i = 0; i < fb.getQueues().getLenght(); i++) {
+                Queue q = fb.getQueues().getElementGeneric(i);
+                if (q != null && !q.isEmpty()) return true;
+            }
+            return false;
+        }
+
+        private int findProcessLevel(Feedback fb, Process p) {
+            for (int i = 0; i < fb.getQueues().getLenght(); i++) {
+                Queue q = fb.getQueues().getElementGeneric(i);
+                if (q.contains(p)) return i;
+            }
+            return 0;
         }
 
         public void addProcessQueue(Process process) {
@@ -646,7 +735,9 @@ public class CPU {
    
     // Logs mejorados
     private synchronized void log(String category, String message) {
-        System.out.printf("[Clock %3d] [%s] %s%n", currentTime, category, message);
+        String logMsg = String.format("[Clock %3d] [%s] %s%n", currentTime, category, message);
+        System.out.print(logMsg);  
+        notifyLogListener(logMsg); 
     }
 
     private void logSO(String message) { log("SO", message); }
@@ -654,6 +745,17 @@ public class CPU {
     private void logCPU(String message) { log("CPU", message); }
     private void logSched(String message) { log("Scheduler", message); }
     private void logProc(String message) { log("Proceso", message); }
+    
+    public void setLogListener(Consumer<String> listener) {
+        this.logListener = listener;
+    }
+
+    private void notifyLogListener(String message) {
+        if (logListener != null) {
+            logListener.accept(message);
+        }
+    }
+
    
    public Object getScheduler(){
        return this.scheduler;

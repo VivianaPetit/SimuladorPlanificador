@@ -4,7 +4,12 @@
  */
 package GUI;
 
+import DataStruct.LinkedList;
+import Model.CPU;
 import java.awt.BorderLayout;
+import java.util.Random;
+import javax.swing.JOptionPane;
+import Model.Process;
 
 /**
  *
@@ -15,6 +20,8 @@ public class AddNewProcess extends javax.swing.JFrame {
     /**
      * Creates new form AddNewProcess
      */
+    private static int lastPid = 0;
+    
     public AddNewProcess() {
         initComponents();
         this.setSize(432, 460);
@@ -22,7 +29,25 @@ public class AddNewProcess extends javax.swing.JFrame {
         this.setLocationRelativeTo(null);
         this.setLayout(new BorderLayout(10,10));
         this.setTitle("Crear Proceso");
+        
 
+    }
+    
+    private void crearProceso(int pid, String name, int totalInstructions, boolean cpuBound,
+                                int cyclesToException, int exceptionServiceCycles, int memoryNeeded, int priority) {
+            // 2️⃣ Generar ID aleatorio y obtener tiempo actual del CPU
+            int arrivalTime = CPU.currentTime;
+
+            // 3️⃣ Crear el proceso
+            Process p = new Process(pid, name, totalInstructions, cpuBound,
+                                    cyclesToException, exceptionServiceCycles,
+                                    memoryNeeded, priority, arrivalTime);
+
+            // 4️⃣ Agregar el proceso a la lista de procesos
+            SimuladorCPU.procesos.insertFinal(p);
+            
+            JOptionPane.showMessageDialog(this, "Proceso creado correctamente con PID " + pid, "Éxito", JOptionPane.INFORMATION_MESSAGE);
+           
     }
     
 
@@ -36,17 +61,12 @@ public class AddNewProcess extends javax.swing.JFrame {
     private void initComponents() {
 
         panelRound1 = new GUI.PanelRound();
-        cyclestoexception3 = new javax.swing.JSpinner();
-        exceptionservicecycles2 = new javax.swing.JSpinner();
-        memorynedded2 = new javax.swing.JSpinner();
-        instructions1 = new javax.swing.JSpinner();
-        priority1 = new javax.swing.JSpinner();
         jLabel12 = new javax.swing.JLabel();
         jButton2 = new javax.swing.JButton();
         jLabel11 = new javax.swing.JLabel();
-        cyclestoexception2 = new javax.swing.JSpinner();
-        memorynedded1 = new javax.swing.JSpinner();
-        exceptionservicecycles1 = new javax.swing.JSpinner();
+        cyclestoexception = new javax.swing.JSpinner();
+        memorynedded = new javax.swing.JSpinner();
+        exceptionservicecycles = new javax.swing.JSpinner();
         instructions = new javax.swing.JSpinner();
         priority = new javax.swing.JSpinner();
         jButton1 = new javax.swing.JButton();
@@ -60,7 +80,7 @@ public class AddNewProcess extends javax.swing.JFrame {
         jLabel3 = new javax.swing.JLabel();
         jLabel2 = new javax.swing.JLabel();
         jLabel1 = new javax.swing.JLabel();
-        name1 = new javax.swing.JTextField();
+        name = new javax.swing.JTextField();
         iscpubound = new javax.swing.JComboBox<>();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
@@ -68,21 +88,6 @@ public class AddNewProcess extends javax.swing.JFrame {
         getContentPane().setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
         panelRound1.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
-
-        cyclestoexception3.setModel(new javax.swing.SpinnerNumberModel(0, 0, null, 1));
-        panelRound1.add(cyclestoexception3, new org.netbeans.lib.awtextra.AbsoluteConstraints(220, 180, 150, 30));
-
-        exceptionservicecycles2.setModel(new javax.swing.SpinnerNumberModel(0, 0, null, 1));
-        panelRound1.add(exceptionservicecycles2, new org.netbeans.lib.awtextra.AbsoluteConstraints(220, 230, 150, 30));
-
-        memorynedded2.setModel(new javax.swing.SpinnerNumberModel(1, 1, null, 1));
-        panelRound1.add(memorynedded2, new org.netbeans.lib.awtextra.AbsoluteConstraints(220, 280, 150, 30));
-
-        instructions1.setModel(new javax.swing.SpinnerNumberModel(1, 1, null, 1));
-        panelRound1.add(instructions1, new org.netbeans.lib.awtextra.AbsoluteConstraints(220, 90, 150, 30));
-
-        priority1.setModel(new javax.swing.SpinnerNumberModel(0, 0, null, 1));
-        panelRound1.add(priority1, new org.netbeans.lib.awtextra.AbsoluteConstraints(220, 330, 150, 30));
 
         jLabel12.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
         jLabel12.setText("Nro. Instrucciones");
@@ -100,9 +105,9 @@ public class AddNewProcess extends javax.swing.JFrame {
         jLabel11.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
         jLabel11.setText("Cantidad de memoria ");
         panelRound1.add(jLabel11, new org.netbeans.lib.awtextra.AbsoluteConstraints(70, 280, -1, 30));
-        panelRound1.add(cyclestoexception2, new org.netbeans.lib.awtextra.AbsoluteConstraints(220, 180, 150, 30));
-        panelRound1.add(memorynedded1, new org.netbeans.lib.awtextra.AbsoluteConstraints(220, 280, 150, 30));
-        panelRound1.add(exceptionservicecycles1, new org.netbeans.lib.awtextra.AbsoluteConstraints(220, 230, 150, 30));
+        panelRound1.add(cyclestoexception, new org.netbeans.lib.awtextra.AbsoluteConstraints(220, 180, 150, 30));
+        panelRound1.add(memorynedded, new org.netbeans.lib.awtextra.AbsoluteConstraints(220, 280, 150, 30));
+        panelRound1.add(exceptionservicecycles, new org.netbeans.lib.awtextra.AbsoluteConstraints(220, 230, 150, 30));
         panelRound1.add(instructions, new org.netbeans.lib.awtextra.AbsoluteConstraints(220, 90, 150, 30));
         panelRound1.add(priority, new org.netbeans.lib.awtextra.AbsoluteConstraints(220, 330, 150, 30));
 
@@ -156,12 +161,12 @@ public class AddNewProcess extends javax.swing.JFrame {
         jLabel1.setText("Crear Proceso");
         panelRound1.add(jLabel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 10, -1, -1));
 
-        name1.addActionListener(new java.awt.event.ActionListener() {
+        name.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                name1ActionPerformed(evt);
+                nameActionPerformed(evt);
             }
         });
-        panelRound1.add(name1, new org.netbeans.lib.awtextra.AbsoluteConstraints(220, 50, 150, 30));
+        panelRound1.add(name, new org.netbeans.lib.awtextra.AbsoluteConstraints(220, 50, 150, 30));
 
         iscpubound.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "true", "false" }));
         iscpubound.addActionListener(new java.awt.event.ActionListener() {
@@ -180,9 +185,9 @@ public class AddNewProcess extends javax.swing.JFrame {
         // TODO add your handling code here:
     }//GEN-LAST:event_iscpuboundActionPerformed
 
-    private void name1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_name1ActionPerformed
+    private void nameActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_nameActionPerformed
         // TODO add your handling code here:
-    }//GEN-LAST:event_name1ActionPerformed
+    }//GEN-LAST:event_nameActionPerformed
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
         // TODO add your handling code here:
@@ -190,17 +195,82 @@ public class AddNewProcess extends javax.swing.JFrame {
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
         // TODO add your handling code here:
+        try {
+        // Leer valores desde los campos
+        String nombre = name.getText().trim();
+        boolean cpuBound = Boolean.parseBoolean(iscpubound.getSelectedItem().toString());
+        int totalInstructions = (int) instructions.getValue();
+        int cyclesToException = (int) cyclestoexception.getValue();
+        int exceptionServiceCycles = (int) exceptionservicecycles.getValue();
+        int memoryNeeded = (int) memorynedded.getValue();
+        int prioridad = (int) priority.getValue();
+        
+        // 🔹 Validaciones
+        if (nombre.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Debe ingresar un nombre para el proceso.");
+            return;
+        }
+
+        if (totalInstructions < 1) {
+            JOptionPane.showMessageDialog(this, "Las instrucciones deben ser al menos 1.");
+            return;
+        }
+
+        if (prioridad < 0) {
+            JOptionPane.showMessageDialog(this, "La prioridad debe ser mayor que cero.");
+            return;
+        }
+
+        if (!cpuBound) {
+            if (cyclesToException < 1 || exceptionServiceCycles < 1) {
+                JOptionPane.showMessageDialog(this, "Los ciclos de excepción y servicio deben ser >= 1 si el proceso no es CPU Bound.");
+                return;
+            }
+        } else {
+            // Si es CPU bound, deshabilitar y forzar a 0
+            cyclestoexception.setEnabled(false);
+            exceptionservicecycles.setEnabled(false);
+            cyclesToException = 0;
+            exceptionServiceCycles = 0;
+        }
+
+        if (memoryNeeded < 1) {
+            JOptionPane.showMessageDialog(this, "La memoria debe ser al menos 1 MB.");
+            return;
+        }
+
+        // 🔹 Generar ID único
+        int pid = ++lastPid;
+
+        crearProceso(pid, nombre, totalInstructions, cpuBound, cyclesToException, exceptionServiceCycles, memoryNeeded, prioridad);
+
+
+        // 🔹 Limpiar campos
+        name.setText("");
+        instructions.setValue(1);
+        cyclestoexception.setValue(0);
+        exceptionservicecycles.setValue(0);
+        memorynedded.setValue(1);
+        priority.setValue(0);
+        iscpubound.setSelectedItem(false);
+
+        // Rehabilitar los campos si el siguiente no es CPU bound
+        cyclestoexception.setEnabled(true);
+        exceptionservicecycles.setEnabled(true);
+
+    } catch (Exception e) {
+        JOptionPane.showMessageDialog(this, "Error al crear el proceso");
+        e.printStackTrace();
+    }
+
     }//GEN-LAST:event_jButton2ActionPerformed
 
     
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JSpinner cyclestoexception2;
-    private javax.swing.JSpinner cyclestoexception3;
-    private javax.swing.JSpinner exceptionservicecycles1;
-    private javax.swing.JSpinner exceptionservicecycles2;
+    private javax.swing.JSpinner cyclestoexception;
+    private javax.swing.JSpinner exceptionservicecycles;
     private javax.swing.JSpinner instructions;
-    private javax.swing.JSpinner instructions1;
     private javax.swing.JComboBox<String> iscpubound;
     private javax.swing.JButton jButton1;
     private javax.swing.JButton jButton2;
@@ -216,11 +286,9 @@ public class AddNewProcess extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel7;
     private javax.swing.JLabel jLabel8;
     private javax.swing.JLabel jLabel9;
-    private javax.swing.JSpinner memorynedded1;
-    private javax.swing.JSpinner memorynedded2;
-    private javax.swing.JTextField name1;
+    private javax.swing.JSpinner memorynedded;
+    private javax.swing.JTextField name;
     private GUI.PanelRound panelRound1;
     private javax.swing.JSpinner priority;
-    private javax.swing.JSpinner priority1;
     // End of variables declaration//GEN-END:variables
 }
