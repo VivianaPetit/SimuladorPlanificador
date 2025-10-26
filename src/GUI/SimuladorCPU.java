@@ -96,12 +96,12 @@ public class SimuladorCPU extends javax.swing.JFrame {
 
         // Crear CPU con el scheduler
         cpu = new CPU(scheduler);
-        iniciarReloj();
- 
+        
         //CPU.setLayout(new FlowLayout(FlowLayout.LEFT, 10, 10));
         //CPU.setBackground(new Color(245, 245, 245));
         
         iniciarSimulacion();
+        iniciarReloj();
         configurarTodasLasGraficas();
 
     }
@@ -242,7 +242,6 @@ public class SimuladorCPU extends javax.swing.JFrame {
             timer.start();
         }
 
-
         private void iniciarSimulacion() {
             if (simulacionActiva) return; // evitar múltiples ejecuciones
 
@@ -282,39 +281,37 @@ public class SimuladorCPU extends javax.swing.JFrame {
                 while (simulacionActiva) {
                     LinkedList<Process> listaProcesos = cpu.obtenerTodosLosProcesos();
                     SwingUtilities.invokeLater(() -> actualizarPaneles(listaProcesos));
-if (panelUtilizacionCPU != null) {
-    long tiempoCPU = cpu.getCurrentTime();
-    long ciclosOcupadosCPU = cpu.getBusyCycles();
-    
-    double utilizacion = (tiempoCPU > 0) ? 
-        ((double) ciclosOcupadosCPU / tiempoCPU) * 100.0 : 0.0;
-    
-    System.out.println("tiempo CPU" + tiempoCPU);
-    System.out.println("ciclosOcupados" + ciclosOcupadosCPU);
-    
-    
-    utilizacion = Math.min(utilizacion, 100.0);
-    panelUtilizacionCPU.actualizarGrafico((int) tiempoCPU, utilizacion);
-}
+                if (panelUtilizacionCPU != null) {
+                    long tiempoCPU = cpu.getCurrentTime();
+                    long ciclosOcupadosCPU = cpu.getBusyCycles();
 
-if (panelThroughput != null) {
-    // Contar procesos terminados
-    int procesosCompletados = 0;
-    LinkedList<Process> todosProcesos = cpu.obtenerTodosLosProcesos();
-    for (int i = 0; i < todosProcesos.getLenght(); i++) {
-        Process p = todosProcesos.getElementIn(i);
-        if (p.getStatus() == Process.Status.TERMINATED) {
-            procesosCompletados++;
-        }
-    }
-    panelThroughput.actualizarGrafico((int)cpu.getCurrentTime(), procesosCompletados);
-}
+                    double utilizacion = (tiempoCPU > 0) ? 
+                        ((double) ciclosOcupadosCPU / tiempoCPU) * 100.0 : 0.0;
 
 
-if (panelTiempoEspera != null) {
-    double tiempoEsperaPromedio = calcularTiempoEsperaPromedio();
-    panelTiempoEspera.actualizarGrafico((int)cpu.getCurrentTime(), tiempoEsperaPromedio);
-}
+
+                    utilizacion = Math.min(utilizacion, 100.0);
+                    panelUtilizacionCPU.actualizarGrafico((int) tiempoCPU, utilizacion);
+                }
+
+                if (panelThroughput != null) {
+                    // Contar procesos terminados
+                    int procesosCompletados = 0;
+                    LinkedList<Process> todosProcesos = cpu.obtenerTodosLosProcesos();
+                    for (int i = 0; i < todosProcesos.getLenght(); i++) {
+                        Process p = todosProcesos.getElementIn(i);
+                        if (p.getStatus() == Process.Status.TERMINATED) {
+                            procesosCompletados++;
+                        }
+                    }
+                    panelThroughput.actualizarGrafico((int)cpu.getCurrentTime(), procesosCompletados);
+                }
+
+
+                if (panelTiempoEspera != null) {
+                    double tiempoEsperaPromedio = calcularTiempoEsperaPromedio();
+                    panelTiempoEspera.actualizarGrafico((int)cpu.getCurrentTime(), tiempoEsperaPromedio);
+                }
 
 
                     try {
@@ -384,10 +381,13 @@ if (panelTiempoEspera != null) {
                 case READY -> tarjeta.setBackground(new Color(210, 230, 255));
                 case BLOCKED -> tarjeta.setBackground(new Color(255, 230, 190));
                 case TERMINATED -> tarjeta.setBackground(new Color(220, 220, 220));
+                case SUSPENDED_READY -> tarjeta.setBackground(new Color(153, 153, 255));
+                case SUSPENDED_BLOCKED -> tarjeta.setBackground(new Color(255, 51, 51));
             }
 
             return tarjeta;
         }
+
 
     
     private void actualizarPaneles(LinkedList<Process> procesos) {
@@ -395,6 +395,11 @@ if (panelTiempoEspera != null) {
         colaListo.removeAll();
         colaBloqueado.removeAll();
         colaTerminado.removeAll();
+        colaListoSuspendido.removeAll();
+        colaBloqueadoSuspendido.removeAll();
+        
+        // actualizar duracion de ciclo si aplica: 
+        durationCycle.setText("" + (CPU.cycleDurationMs / 1000));
  
         Process procesoEnCPU = cpu.getCurrentProcess();
         
@@ -406,6 +411,7 @@ if (panelTiempoEspera != null) {
             // Si es el proceso activo en CPU, forzamos a mostrarlo ahí
             if (p == procesoEnCPU) {
                 procesoejecucion.setText(procesoEnCPU.getName());
+                id.setText("" + procesoEnCPU.getPid());
                 pcCPU.setText("" + procesoEnCPU.getPc());
                 marCPU.setText("" + procesoEnCPU.getMar());
                 statusCPU.setText(procesoEnCPU.getStatus().toString());
@@ -418,12 +424,14 @@ if (panelTiempoEspera != null) {
                 case READY -> colaListo.add(tarjeta);
                 case BLOCKED -> colaBloqueado.add(tarjeta);
                 case TERMINATED -> colaTerminado.add(tarjeta);
-                //case RUNNING -> procesoEnCPU = p;
+                case SUSPENDED_READY -> colaListoSuspendido.add(tarjeta);
+                case SUSPENDED_BLOCKED -> colaBloqueadoSuspendido.add(tarjeta);
             }
         }
         
-        if (procesoEnCPU == null && cpu.isSoEjecutando()) {
+        if (cpu.isSoEjecutando()) {
             procesoejecucion.setText("Sistema Operativo");
+            id.setText("0");
             pcCPU.setText("" + cpu.getPc());
             marCPU.setText("" + cpu.getMar());
             statusCPU.setText(Process.Status.RUNNING.toString());
@@ -431,6 +439,7 @@ if (panelTiempoEspera != null) {
         } else if (procesoEnCPU != null) {
             // Si hay un proceso de usuario ejecutándose
             procesoejecucion.setText(procesoEnCPU.getName());
+            id.setText("" + procesoEnCPU.getPid());
             pcCPU.setText("" + procesoEnCPU.getPc());
             marCPU.setText("" + procesoEnCPU.getMar());
             statusCPU.setText(procesoEnCPU.getStatus().toString());
@@ -438,6 +447,7 @@ if (panelTiempoEspera != null) {
         } else {
             // Si no hay nada ejecutando
             procesoejecucion.setText("Proceso del sistema");
+            id.setText("--");
             pcCPU.setText("--");
             marCPU.setText("--");
             statusCPU.setText("--");
@@ -489,6 +499,8 @@ if (panelTiempoEspera != null) {
         jLabel4 = new javax.swing.JLabel();
         jLabel5 = new javax.swing.JLabel();
         politica = new javax.swing.JLabel();
+        jLabel6 = new javax.swing.JLabel();
+        durationCycle = new javax.swing.JLabel();
         CPULabel = new javax.swing.JPanel();
         marCPU = new javax.swing.JLabel();
         statusCPU = new javax.swing.JLabel();
@@ -506,6 +518,8 @@ if (panelTiempoEspera != null) {
         cycles = new javax.swing.JLabel();
         idleL = new javax.swing.JLabel();
         idle = new javax.swing.JLabel();
+        jLabel13 = new javax.swing.JLabel();
+        id = new javax.swing.JLabel();
         jPanel2 = new javax.swing.JPanel();
         jTabbedPane2 = new javax.swing.JTabbedPane();
         jPanel4 = new javax.swing.JPanel();
@@ -530,9 +544,7 @@ if (panelTiempoEspera != null) {
         setTitle("Simulador de Planificador de Procesos");
         setBackground(new java.awt.Color(51, 153, 255));
         setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
-        setMaximumSize(new java.awt.Dimension(1380, 800));
         setMinimumSize(new java.awt.Dimension(1380, 800));
-        setPreferredSize(new java.awt.Dimension(1380, 800));
         setResizable(false);
         getContentPane().setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
@@ -659,8 +671,8 @@ if (panelTiempoEspera != null) {
         jPanel1.add(lblReloj, new org.netbeans.lib.awtextra.AbsoluteConstraints(90, 50, 160, 30));
 
         jLabel4.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
-        jLabel4.setText("Planificación:");
-        jPanel1.add(jLabel4, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 100, 110, 20));
+        jLabel4.setText("Duracion de un ciclo (segundos)");
+        jPanel1.add(jLabel4, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 120, 220, 20));
 
         jLabel5.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
         jLabel5.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
@@ -670,9 +682,18 @@ if (panelTiempoEspera != null) {
         politica.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
         politica.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
         politica.setText("jLabel1");
-        jPanel1.add(politica, new org.netbeans.lib.awtextra.AbsoluteConstraints(220, 100, 100, -1));
+        jPanel1.add(politica, new org.netbeans.lib.awtextra.AbsoluteConstraints(220, 90, 100, -1));
 
-        panelRound2.add(jPanel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 530, 340, 150));
+        jLabel6.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        jLabel6.setText("Planificación:");
+        jPanel1.add(jLabel6, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 90, 110, 20));
+
+        durationCycle.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+        durationCycle.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
+        durationCycle.setText("jLabel1");
+        jPanel1.add(durationCycle, new org.netbeans.lib.awtextra.AbsoluteConstraints(220, 120, 100, -1));
+
+        panelRound2.add(jPanel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 530, 340, 160));
 
         CPULabel.setBackground(new java.awt.Color(255, 255, 255));
         CPULabel.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(102, 204, 0), 3));
@@ -681,17 +702,17 @@ if (panelTiempoEspera != null) {
         marCPU.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
         marCPU.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
         marCPU.setText("N/A");
-        CPULabel.add(marCPU, new org.netbeans.lib.awtextra.AbsoluteConstraints(140, 150, 180, 30));
+        CPULabel.add(marCPU, new org.netbeans.lib.awtextra.AbsoluteConstraints(140, 170, 180, 30));
 
         statusCPU.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
         statusCPU.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
         statusCPU.setText("N/A");
-        CPULabel.add(statusCPU, new org.netbeans.lib.awtextra.AbsoluteConstraints(140, 200, 180, 30));
+        CPULabel.add(statusCPU, new org.netbeans.lib.awtextra.AbsoluteConstraints(140, 220, 180, 30));
 
         pcCPU.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
         pcCPU.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
         pcCPU.setText("N/A");
-        CPULabel.add(pcCPU, new org.netbeans.lib.awtextra.AbsoluteConstraints(140, 100, 180, 30));
+        CPULabel.add(pcCPU, new org.netbeans.lib.awtextra.AbsoluteConstraints(140, 120, 180, 30));
 
         procesoejecucion.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
         procesoejecucion.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
@@ -699,8 +720,8 @@ if (panelTiempoEspera != null) {
         CPULabel.add(procesoejecucion, new org.netbeans.lib.awtextra.AbsoluteConstraints(180, 40, 140, 30));
 
         jLabel12.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
-        jLabel12.setText("PC");
-        CPULabel.add(jLabel12, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 100, 40, 30));
+        jLabel12.setText("ID");
+        CPULabel.add(jLabel12, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 80, 40, 30));
 
         busy.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
         busy.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
@@ -709,11 +730,11 @@ if (panelTiempoEspera != null) {
 
         jLabel10.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
         jLabel10.setText("Status");
-        CPULabel.add(jLabel10, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 200, 50, 30));
+        CPULabel.add(jLabel10, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 220, 50, 30));
 
         jLabel9.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
         jLabel9.setText("MAR");
-        CPULabel.add(jLabel9, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 150, 50, 30));
+        CPULabel.add(jLabel9, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 170, 50, 30));
 
         jLabel7.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
         jLabel7.setText("Proceso en ejecución:");
@@ -725,12 +746,12 @@ if (panelTiempoEspera != null) {
 
         jLabel8.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
         jLabel8.setText("Tipo");
-        CPULabel.add(jLabel8, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 250, 40, 30));
+        CPULabel.add(jLabel8, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 270, 40, 30));
 
         tipoCPU.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
         tipoCPU.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
         tipoCPU.setText("N/A");
-        CPULabel.add(tipoCPU, new org.netbeans.lib.awtextra.AbsoluteConstraints(140, 250, 180, 30));
+        CPULabel.add(tipoCPU, new org.netbeans.lib.awtextra.AbsoluteConstraints(140, 270, 180, 30));
 
         cpuCiclosL.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
         cpuCiclosL.setText("Ciclos");
@@ -749,6 +770,15 @@ if (panelTiempoEspera != null) {
         idle.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
         idle.setText("N/A");
         CPULabel.add(idle, new org.netbeans.lib.awtextra.AbsoluteConstraints(140, 380, 180, 30));
+
+        jLabel13.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        jLabel13.setText("PC");
+        CPULabel.add(jLabel13, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 120, 40, 30));
+
+        id.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+        id.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
+        id.setText("N/A");
+        CPULabel.add(id, new org.netbeans.lib.awtextra.AbsoluteConstraints(140, 80, 180, 30));
 
         panelRound2.add(CPULabel, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 50, 340, 470));
 
@@ -1019,13 +1049,17 @@ if (panelTiempoEspera != null) {
     private javax.swing.JPanel colaTerminado;
     private javax.swing.JLabel cpuCiclosL;
     private javax.swing.JLabel cycles;
+    private javax.swing.JLabel durationCycle;
+    private javax.swing.JLabel id;
     private javax.swing.JLabel idle;
     private javax.swing.JLabel idleL;
     private javax.swing.JLabel jLabel10;
     private javax.swing.JLabel jLabel12;
+    private javax.swing.JLabel jLabel13;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
     private javax.swing.JLabel jLabel5;
+    private javax.swing.JLabel jLabel6;
     private javax.swing.JLabel jLabel7;
     private javax.swing.JLabel jLabel8;
     private javax.swing.JLabel jLabel9;

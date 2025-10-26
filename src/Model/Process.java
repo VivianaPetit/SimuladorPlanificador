@@ -31,7 +31,7 @@ public class Process implements Runnable {
     private int completionTime = -1;
 
     public enum Status {
-        NEW, READY, RUNNING, BLOCKED, SUSPENDED, TERMINATED, SUSPEND_READY, SUSPEND_BLOCKED
+        NEW, READY, RUNNING, BLOCKED, SUSPENDED, TERMINATED, SUSPENDED_BLOCKED, SUSPENDED_READY
     }
     
     private int arrivalTime;
@@ -39,6 +39,7 @@ public class Process implements Runnable {
     private int finishTime;
     private Status status;
     private Thread thread; // hilo interno que representa al proceso
+    private boolean inMemory; // para saber si esta en memoria
 
    
     public Process(int pid, String name, int totalInstructions, boolean cpuBound,
@@ -61,6 +62,7 @@ public class Process implements Runnable {
         this.startTime = -1;   // aún no ha iniciado
         this.finishTime = -1;  // aún no ha terminado
         this.status = Status.NEW;
+        this.inMemory = false;
     }
 
     //  Ejecución del proceso 
@@ -105,6 +107,11 @@ public class Process implements Runnable {
             thread = new Thread(this, "Proceso-" + pid);
             thread.start();
         }
+    }
+    
+    public long getTimeInMemory(int currentTime) {
+            if (!inMemory) return 0; // si no está en memoria, no tiene tiempo
+            return currentTime - arrivalTime;
     }
     
     public void incrementPC(){
@@ -226,5 +233,13 @@ public class Process implements Runnable {
 
     public void setCurrentLevel(int level) { 
         this.currentLevel = level; 
+    }
+    
+    public boolean isInMemory() {
+        return this.inMemory;
+    }
+    
+    public void setInMemory(boolean value) {
+        this.inMemory = value;
     }
 }
